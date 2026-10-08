@@ -15,7 +15,7 @@ import profileRouter from "./routes/profile.routes.js";
 import supportRouter from "./routes/support.routes.js";
 import supportTicketsRouter from "./routes/supportTickets.routes.js";
 import sessionsRouter from "./routes/sessions.routes.js";
-import clinicalRouter from "./routes/clinicalAssessment.routes.js";
+import clinicalRouter, { assessmentAliasRouter } from "./routes/clinicalAssessment.routes.js";
 import matchingRouter from "./routes/matching.routes.js";
 import meRouter, { metaRouter } from "./routes/me.routes.js";
 import supporterRouter from "./routes/supporter.routes.js";
@@ -64,6 +64,8 @@ export function createApp() {
   app.use("/api/supporter", supporterRouter);
   app.use("/api/therapist", therapistRouter);
   app.use("/api/clinical", clinicalRouter);
+  // Same question handler at its earlier path; see clinicalAssessment.routes.js.
+  app.use("/api/assessment", assessmentAliasRouter);
   app.use("/api/matching", matchingRouter);
   // One base path, two routers: clinic operations first, clinical oversight
   // second. Neither shares a path with the other, so the order only matters
@@ -95,7 +97,9 @@ let app = null;
 function init() {
   if (!ready) {
     ready = (async () => {
-      await runMigrations();
+      // Migrations are applied at build time in deployed environments; only
+      // development (or an explicit MIGRATE_ON_BOOT=true) runs them here.
+      if (env.migrateOnBoot) await runMigrations();
       await loadColumnMap(await getDriver());
     })().catch((err) => {
       ready = null;

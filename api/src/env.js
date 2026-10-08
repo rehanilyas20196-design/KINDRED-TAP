@@ -11,6 +11,16 @@ dotenv.config({ path: path.resolve(here, "../../../.env") });
 export const env = {
   port: Number(process.env.PORT || 4000),
   nodeEnv: process.env.NODE_ENV || "development",
+  /**
+   * Whether the cold start applies pending migrations.
+   *
+   * Deployments apply them at build time instead (see scripts/migrate-if-configured.js),
+   * so production request handling stays free of migration work. Local development
+   * keeps boot-time migrations because there is no build step there.
+   */
+  migrateOnBoot: process.env.MIGRATE_ON_BOOT
+    ? process.env.MIGRATE_ON_BOOT === "true"
+    : (process.env.NODE_ENV || "development") !== "production",
   webOrigin: (process.env.WEB_ORIGIN || "http://localhost:3000")
     .split(",")
     .map((s) => s.trim())
@@ -24,4 +34,14 @@ export const env = {
 
 if (env.nodeEnv === "production" && env.jwtSecret === "dev-only-change-me") {
   throw new Error("JWT_SECRET must be set to a real secret in production.");
+}
+
+// A Supabase project URL (https://...supabase.co) is a REST endpoint, not a
+// database: passing it here produces a connection timeout that looks like a
+// network fault. Fail with the actual mistake instead.
+if (env.databaseUrl && /^https?:\/\//i.test(env.databaseUrl)) {
+  throw new Error(
+    "DATABASE_URL must be a postgres:// connection string (Supabase pooler), " +
+      "not an https:// project URL."
+  );
 }

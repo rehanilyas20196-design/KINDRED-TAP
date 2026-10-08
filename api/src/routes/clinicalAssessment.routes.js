@@ -99,10 +99,8 @@ clinicalRouter.get(
  * `test` is optional. Omitting it returns both, which is what a resume flow
  * wants; the two-step screen passes it explicitly.
  */
-clinicalRouter.get(
-  "/questions",
-  requireAuth,
-  asyncHandler(async (req, res) => {
+const listQuestions = asyncHandler(
+  async (req, res) => {
     const test = req.query.test === undefined ? null : Number(req.query.test);
     if (test !== null && ![1, 2].includes(test)) {
       throw badRequest("test must be 1 or 2");
@@ -141,8 +139,20 @@ clinicalRouter.get(
     }));
 
     res.json({ questions, total: questions.length });
-  })
+  }
 );
+
+clinicalRouter.get("/questions", requireAuth, listQuestions);
+
+/**
+ * GET /api/assessment/questions - the same list under its earlier path.
+ *
+ * One handler serves both mounts so the two can never answer differently:
+ * a second copy of the query is exactly the duplication to avoid.
+ */
+export const assessmentAliasRouter = Router();
+
+assessmentAliasRouter.get("/questions", requireAuth, listQuestions);
 
 /* ------------------------------------------------------------------ */
 /* Assessment lifecycle                                                */
