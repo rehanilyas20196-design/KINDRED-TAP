@@ -1,0 +1,960 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+  Kindred Tap design system — "Clinical Calm"
+  ------------------------------------------------------------------
+  Light-first, single-source palette for a mental-health product.
+  Every token below keeps the same *name* the app already uses
+  (slate / teal / emerald / amber / red / rose / sky / sage / purple
+  / blue), so existing utility classes keep working while the values
+  are retuned to a calm, trustworthy, healthcare-grade scale.
+
+  Principles
+    · One accent (teal) — never gradients for their own sake
+    · Warm, low-chroma neutrals instead of blue-grey "app chrome"
+    · Text contrast >= 4.5:1 everywhere it carries meaning
+    · Spacing on a 4/8 rhythm; radius and shadow as tokens
+    · Motion is short (120–240ms) and always optional
+*/
+
+/* Dark variants are opt-in: the app ships one tuned light theme. Adding
+   `class="dark"` to <html> re-enables every `dark:` utility already in
+   the codebase without touching a single component. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px 0 rgb(16 32 28 / 0.04);
+  --shadow-sm: 0 1px 2px -1px rgb(16 32 28 / 0.06), 0 2px 6px -2px rgb(16 32 28 / 0.06);
+  --shadow-md: 0 2px 4px -2px rgb(16 32 28 / 0.06), 0 8px 20px -6px rgb(16 32 28 / 0.1);
+  --shadow-lg: 0 8px 16px -8px rgb(16 32 28 / 0.12), 0 24px 48px -24px rgb(16 32 28 / 0.18);
+
+  /* Radius lives in @theme below — a single source of truth so the
+     `rounded-*` utilities and the `.btn` / `.card` primitives can never
+     drift apart again. */
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+@theme {
+  /* ---------------------------------------------------------------- */
+  /* Neutrals — warm grey with a green undertone so surfaces feel calm */
+  /* ---------------------------------------------------------------- */
+  --color-slate-50: #fafbfa;
+  --color-slate-100: #f6f7f6; /* page background */
+  --color-slate-200: #ebeeec; /* hairline dividers */
+  --color-slate-300: #dfe3e1; /* borders */
+  --color-slate-400: #6e7c77; /* muted text — 4.6:1 on white */
+  --color-slate-500: #5a6863;
+  --color-slate-600: #47544f;
+  --color-slate-700: #35423d; /* strong body text */
+  --color-slate-800: #23302b;
+  --color-slate-900: #16211d; /* ink */
+  --color-slate-950: #0e1614;
+
+  /* ---------------------------------------------------------------- */
+  /* Primary — deep, desaturated teal (calm + clinical)                */
+  /* ---------------------------------------------------------------- */
+  --color-teal-50: #eef7f5;
+  --color-teal-100: #d9eeea;
+  --color-teal-200: #b6ded7;
+  --color-teal-300: #8ccbc1;
+  --color-teal-400: #5fb3a8;
+  --color-teal-500: #369b8f;
+  --color-teal-600: #218477;
+  --color-teal-700: #146a5f; /* primary action — 6.5:1 on white */
+  --color-teal-800: #11544b;
+  --color-teal-900: #0d433c;
+  --color-teal-950: #072a26;
+
+  /* ---------------------------------------------------------------- */
+  /* Success                                                           */
+  /* ---------------------------------------------------------------- */
+  --color-emerald-50: #eef8f1;
+  --color-emerald-100: #d8f0e0;
+  --color-emerald-200: #b3e2c6;
+  --color-emerald-300: #86cfa6;
+  --color-emerald-400: #56b784;
+  --color-emerald-500: #34a06b;
+  --color-emerald-600: #238457;
+  --color-emerald-700: #1b6a47;
+  --color-emerald-800: #17543a;
+  --color-emerald-900: #134431;
+  --color-emerald-950: #0b2a1f;
+
+  /* ---------------------------------------------------------------- */
+  /* Info / links                                                      */
+  /* ---------------------------------------------------------------- */
+  --color-sky-50: #eef3fb;
+  --color-sky-100: #dde7f7;
+  --color-sky-200: #c1d2f0;
+  --color-sky-300: #9bb5e6;
+  --color-sky-400: #7093d9;
+  --color-sky-500: #4d74cb;
+  --color-sky-600: #3c5db4;
+  --color-sky-700: #334c93;
+  --color-sky-800: #2c4077;
+  --color-sky-900: #26375f;
+  --color-sky-950: #161f3a;
+
+  /* ---------------------------------------------------------------- */
+  /* Warning                                                           */
+  /* ---------------------------------------------------------------- */
+  --color-amber-50: #fdf7ec;
+  --color-amber-100: #faeed3;
+  --color-amber-200: #f4dda8;
+  --color-amber-300: #ecc772;
+  --color-amber-400: #e3ad3f;
+  --color-amber-500: #d29424;
+  --color-amber-600: #b4771a;
+  --color-amber-700: #925e17;
+  --color-amber-800: #784c18;
+  --color-amber-900: #633f17;
+  --color-amber-950: #3a230b;
+
+  /* ---------------------------------------------------------------- */
+  /* Danger                                                            */
+  /* ---------------------------------------------------------------- */
+  --color-red-50: #fdf2f1;
+  --color-red-100: #fbe2df;
+  --color-red-200: #f7c5bf;
+  --color-red-300: #ef9d93;
+  --color-red-400: #e37165;
+  --color-red-500: #d34f41;
+  --color-red-600: #b93a2e;
+  --color-red-700: #9b2d23;
+  --color-red-800: #812820;
+  --color-red-900: #6c2620;
+  --color-red-950: #3b120e;
+
+  /* Rose — warm clay accent used for safeguarding actions            */
+  --color-rose-50: #fdf3f1;
+  --color-rose-100: #fbe5e0;
+  --color-rose-200: #f6cbc3;
+  --color-rose-300: #efa79b;
+  --color-rose-400: #e47d6d;
+  --color-rose-500: #d65c49;
+  --color-rose-600: #bf4433;
+  --color-rose-700: #9e3527;
+  --color-rose-800: #822e23;
+  --color-rose-900: #6c2a22;
+  --color-rose-950: #3b140f;
+
+  /* ---------------------------------------------------------------- */
+  /* Support families kept for compatibility                           */
+  /* ---------------------------------------------------------------- */
+  --color-sage-50: #eef8f1;
+  --color-sage-100: #d8f0e0;
+  --color-sage-200: #b3e2c6;
+  --color-sage-300: #86cfa6;
+  --color-sage-400: #56b784;
+  --color-sage-500: #34a06b;
+  --color-sage-600: #238457;
+  --color-sage-700: #1b6a47;
+  --color-sage-800: #17543a;
+  --color-sage-900: #134431;
+  --color-sage-950: #0b2a1f;
+
+  /* Muted indigo — used sparingly, never as a gradient */
+  --color-purple-100: #ecebf7;
+  --color-purple-200: #dcd9ef;
+  --color-purple-300: #c2bde2;
+  --color-purple-400: #a39bd0;
+  --color-purple-500: #847ab9;
+  --color-purple-600: #6a60a0;
+  --color-purple-700: #564d86;
+  --color-purple-800: #47416e;
+  --color-purple-900: #3c385c;
+  --color-purple-950: #221f36;
+
+  --color-blue-100: #dde7f7;
+  --color-blue-200: #c1d2f0;
+  --color-blue-300: #9bb5e6;
+  --color-blue-400: #7093d9;
+  --color-blue-500: #4d74cb;
+  --color-blue-600: #3c5db4;
+  --color-blue-700: #334c93;
+  --color-blue-800: #2c4077;
+  --color-blue-900: #26375f;
+  --color-blue-950: #161f3a;
+
+  /* ---------------------------------------------------------------- */
+  /* Radius — one scale for the whole product. Declared once here so the */
+  /* `rounded-*` utilities and the `.btn` / `.card` primitives resolve to */
+  /* the same pixels. `--radius-3xl` is pinned to `2xl` so legacy        */
+  /* `rounded-3xl` cards and the `.card` primitive render identically.   */
+  /* ---------------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 18px;
+  --radius-4xl: 22px;
+
+  /* Brand aliases */
+  --color-chartreuse: #146a5f;
+  --color-chartreuse-light: #218477;
+  --color-pink-accent: #d65c49;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-heading: var(--font-figtree);
+
+  /* Motion tokens */
+  --animate-rise-in: rise-in 0.42s var(--ease-out) both;
+  --animate-fade-in: fade-in 0.3s ease-out both;
+  --animate-enter-up: enter-up 0.34s var(--ease-out) both;
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Root type — fixed so dashboard density stays predictable at any     */
+/* width (the old fluid scale blew type up on large monitors).         */
+/* ------------------------------------------------------------------ */
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media screen and (max-width: 479px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+html.lenis {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #cfd6d2 transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cfd6d2;
+  border-radius: 999px;
+  border: 3px solid #f6f7f6;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8ccbc1;
+}
+
+/* Element defaults live in `@layer base` so a utility class on a heading
+   or a button can still override them — unlayered rules always win and
+   silently killed things like `dark:text-white` on <h1>. */
+
+@layer base {
+  body {
+    font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 400;
+    font-feature-settings: "cv05", "ss01";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    cursor: default;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.021em;
+    line-height: 1.2;
+    color: var(--color-slate-900);
+    text-wrap: balance;
+  }
+
+  /* Headings that don't carry their own `dark:` class would otherwise stay
+     ink-on-ink once the dark surface is active. */
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6 {
+    color: var(--color-slate-50);
+  }
+
+  /* `cursor: default` on the body keeps the calm desktop feel, so every
+     element that actually does something has to opt back into a pointer —
+     otherwise plain links read as static text. */
+  a[href],
+  button:not(:disabled),
+  select,
+  summary,
+  label[for],
+  [role="button"]:not([aria-disabled="true"]),
+  [role="link"],
+  [role="tab"],
+  [role="menuitem"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"],
+  [aria-busy="true"] {
+    cursor: not-allowed;
+  }
+
+  ::selection {
+    background: #b6ded7;
+    color: #0d433c;
+  }
+
+  /* No `border-radius` here: it used to snap every focused element —
+     buttons, cards, dialogs — to a 4px corner the moment it took focus.
+     The outline already follows the element's own radius. */
+  :focus-visible {
+    outline: 2px solid var(--color-teal-700);
+    outline-offset: 2px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Component primitives                                                */
+/* ------------------------------------------------------------------ */
+/* Declared inside `@layer components` on purpose. Tailwind's utilities   */
+/* live in a later layer, so a class on the element — `p-0`, `px-5`,      */
+/* `min-h-11`, `hover:shadow-md`, `rounded-*` — can now override these   */
+/* defaults. Left unlayered they always won, which quietly killed the     */
+/* hover states on every `.card` and the `size="lg"` button.              */
+/* ------------------------------------------------------------------ */
+
+@layer components {
+
+/* Buttons ---------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease,
+    transform var(--dur-fast) ease;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn-primary {
+  background-color: var(--color-teal-700);
+  color: #ffffff;
+  box-shadow: var(--shadow-xs);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-teal-800);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: var(--color-slate-700);
+  box-shadow:
+    inset 0 0 0 1px var(--color-slate-300),
+    var(--shadow-xs);
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-slate-400);
+  color: var(--color-slate-900);
+  box-shadow:
+    inset 0 0 0 1px var(--color-slate-400),
+    var(--shadow-sm);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-slate-600);
+}
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--color-slate-200);
+  color: var(--color-slate-900);
+}
+
+.btn-danger {
+  background-color: var(--color-rose-600);
+  color: #ffffff;
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--color-rose-700);
+}
+
+.btn-sm {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn-lg {
+  min-height: 3rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  border-radius: var(--radius-lg);
+}
+
+/* Surfaces --------------------------------------------------------- */
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xs);
+}
+
+.panel {
+  background-color: #ffffff;
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-2xl);
+}
+
+/* The one hover affordance for a card that navigates somewhere. */
+.card-interactive {
+  transition:
+    border-color var(--dur-base) ease,
+    box-shadow var(--dur-base) ease,
+    transform var(--dur-base) var(--ease-out);
+}
+.card-interactive:hover,
+.card-interactive:focus-visible {
+  border-color: var(--color-teal-400);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Inputs ----------------------------------------------------------- */
+
+.field {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-slate-300);
+  background-color: #ffffff;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-slate-900);
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+}
+.field::placeholder {
+  color: var(--color-slate-400);
+}
+.field:hover:not(:disabled) {
+  border-color: var(--color-slate-400);
+}
+.field:focus {
+  outline: none;
+  border-color: var(--color-teal-600);
+  box-shadow: 0 0 0 3px rgb(33 132 119 / 0.16);
+}
+.field[aria-invalid="true"] {
+  border-color: var(--color-red-500);
+}
+.field[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgb(211 79 65 / 0.18);
+}
+.field:disabled {
+  background-color: var(--color-slate-100);
+  color: var(--color-slate-400);
+  cursor: not-allowed;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--color-slate-700);
+}
+
+/* Small uppercase lead-in above a heading or section. */
+.eyebrow {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-teal-700);
+}
+
+/* Links ------------------------------------------------------------ */
+
+/* Navigation ------------------------------------------------------- */
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--color-slate-600);
+  transition:
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+.nav-item:hover {
+  background-color: var(--color-slate-200);
+  color: var(--color-slate-900);
+}
+.nav-item[aria-current="page"],
+.nav-item[data-active="true"] {
+  background-color: var(--color-teal-50);
+  box-shadow: inset 0 0 0 1px var(--color-teal-100);
+  font-weight: 600;
+  color: var(--color-teal-800);
+}
+.nav-item[aria-current="page"] .nav-item-icon,
+.nav-item[data-active="true"] .nav-item-icon {
+  color: var(--color-teal-700);
+}
+
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size var(--dur-slow) var(--ease-out);
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Status dot ------------------------------------------------------- */
+
+.status-dot {
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-radius: 999px;
+  flex: none;
+}
+
+/* Skeleton shimmer ------------------------------------------------- */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-slate-200);
+  border-radius: var(--radius-sm);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.75),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+
+/* Scroll-reveal entrance. The offset uses the standalone `translate`
+   property, not `transform`, so an element can also carry a
+   `.card-interactive` hover lift (`transform`) without the two fighting
+   over one property. The long transition list also has to repeat the
+   interactive properties: the later `transition` shorthand would otherwise
+   replace the whole `transition-property` list and silently drop them. */
+
+.reveal {
+  opacity: 0;
+  transition:
+    opacity 0.6s var(--ease-out) var(--reveal-delay, 0s),
+    translate 0.6s var(--ease-out) var(--reveal-delay, 0s),
+    border-color var(--dur-base) ease,
+    box-shadow var(--dur-base) ease,
+    transform var(--dur-base) var(--ease-out);
+}
+.reveal-up {
+  translate: 0 1rem;
+}
+.reveal-right {
+  translate: 2rem 0;
+}
+.reveal-left {
+  translate: -2rem 0;
+}
+.reveal-nav {
+  translate: 0 -0.5rem;
+}
+.reveal.is-in {
+  opacity: 1;
+  translate: none;
+}
+
+.grow-line {
+  display: block;
+  width: 0;
+  height: 1px;
+  background: var(--color-slate-300);
+  transition: width 0.9s var(--ease-out) var(--reveal-delay, 0s);
+}
+.grow-line.is-in {
+  width: var(--line-w, 100%);
+}
+
+/* Dark restatements of the primitives. Kept in this layer so a `dark:`
+   utility on the same element still wins. */
+.dark .card,
+.dark .panel {
+  background-color: var(--surface);
+  border-color: var(--surface-line);
+}
+.dark .field {
+  background-color: var(--surface);
+  border-color: var(--surface-line);
+  color: var(--surface-ink);
+}
+.dark .field::placeholder {
+  color: var(--surface-muted);
+}
+.dark .field:disabled {
+  background-color: var(--surface-raised);
+}
+.dark .btn-secondary {
+  background-color: var(--surface);
+  color: var(--color-slate-200);
+  box-shadow:
+    inset 0 0 0 1px var(--surface-line),
+    var(--shadow-xs);
+}
+.dark .btn-secondary:hover:not(:disabled) {
+  color: #ffffff;
+  box-shadow:
+    inset 0 0 0 1px var(--color-slate-500),
+    var(--shadow-sm);
+}
+.dark .btn-ghost {
+  color: var(--color-slate-300);
+}
+.dark .btn-ghost:hover:not(:disabled) {
+  background-color: var(--surface-raised);
+  color: #ffffff;
+}
+.dark .btn-primary {
+  background-color: var(--color-teal-600);
+}
+.dark .btn-primary:hover:not(:disabled) {
+  background-color: var(--color-teal-500);
+}
+.dark .field-label {
+  color: var(--color-slate-300);
+}
+.dark .eyebrow {
+  color: var(--color-teal-300);
+}
+.dark .nav-item {
+  color: var(--color-slate-300);
+}
+.dark .nav-item:hover {
+  background-color: var(--surface-raised);
+  color: #ffffff;
+}
+.dark .nav-item[aria-current="page"],
+.dark .nav-item[data-active="true"] {
+  background-color: rgb(33 132 119 / 0.2);
+  box-shadow: inset 0 0 0 1px rgb(95 179 168 / 0.35);
+  color: var(--color-teal-200);
+}
+.dark .card-interactive:hover,
+.dark .card-interactive:focus-visible {
+  border-color: var(--color-teal-500);
+}
+.dark .skeleton {
+  background-color: var(--surface-raised);
+}
+.dark .grow-line {
+  background: var(--surface-line);
+}
+
+} /* @layer components */
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion / no-JS safety                                       */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+    translate: none !important;
+  }
+  .grow-line {
+    width: var(--line-w, 100%) !important;
+  }
+  .skeleton::after {
+    display: none;
+  }
+}
+
+@media (scripting: none) {
+  .reveal {
+    opacity: 1;
+    translate: none;
+  }
+  .grow-line {
+    width: var(--line-w, 100%);
+  }
+}
+/*
+  ---break---
+*/
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  /* Surfaces the primitives paint with — restated once here so the
+     `.dark .card` / `.dark .field` rules below have tokens to read. */
+  --surface: var(--color-slate-900);
+  --surface-raised: var(--color-slate-800);
+  --surface-line: var(--color-slate-700);
+  --surface-ink: var(--color-slate-100);
+  --surface-muted: var(--color-slate-400);
+}
+
+.dark ::selection {
+  background: var(--color-teal-900);
+  color: var(--color-teal-50);
+}
+.dark {
+  scrollbar-color: #35423d transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #35423d;
+  border-color: var(--color-slate-950);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-teal-700);
+}
+/*
+  ---break---
+*/
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

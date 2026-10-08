@@ -1,0 +1,32 @@
+{
+  "name": "kindred-tap",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kindred Tap - mental health support platform",
+  "workspaces": [
+    "api",
+    "web"
+  ],
+  "scripts": {
+    "setup": "npm install && npm run migrate && npm run seed",
+    "migrate": "npm run migrate --workspace api",
+    "seed": "npm run seed --workspace api",
+    "reset": "npm run reset --workspace api",
+    "dev": "concurrently -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace api",
+    "dev:web": "npm run dev --workspace web",
+    "build": "npm run build --workspace web",
+    "lint": "npm run lint --workspace web",
+    "typecheck": "npm run typecheck --workspace web",
+    "check": "npm run lint && npm run typecheck && npm run build",
+    "test": "npm run test --workspace api",
+    "smoke": "npm run smoke --workspace api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "next": "16.3.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,30 @@
+# dependencies / build output
+node_modules/
+.next/
+out/
+build/
+dist/
+.vercel/
+.railway/
+*.tsbuildinfo
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# logs / os
+*.log
+*.err
+npm-debug.log*
+.DS_Store
+
+# local databases (any variant: .pglite/, .pglite-backup/, .pglite-corrupt/, .pglite.lock …)
+.pglite*
+
+# editor / agent tooling
+.opencode/
+.kilocode/
+claw-code/
+tmp-check/
+~/

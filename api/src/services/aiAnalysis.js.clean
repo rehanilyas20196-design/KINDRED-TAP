@@ -1,0 +1,156 @@
+import { z } from 'zod';
+
+const HIGH_RISK_PATTERNS = [
+  /suicide/i,
+  /kill myself/i,
+  /end my life/i,
+  /want to die/i,
+  /no reason to live/i,
+  /better off dead/i,
+  /self[-\s]?harm/i,
+  /cut myself/i,
+  /hurt myself/i,
+  /overdose/i,
+  /immediate danger/i,
+  /harm others/i,
+  /kill someone/i,
+];
+
+const AIResponseSchema = z.object({
+  primaryIssue: z.string().min(1),
+  secondaryIssues: z.array(z.string()).default([]),
+  confidence: z.record(z.number().min(0).max(1)).default({}),
+  summary: z.string().min(1).max(500),
+});
+
+export function checkHighRisk(text) {
+  if (!text || typeof text !== 'string') return { isHighRisk: false };
+  const lower = text.toLowerCase();
+  for (const pattern of HIGH_RISK_PATTERNS) {
+    if (pattern.test(lower)) {
+      return {
+        isHighRisk: true,
+        safetyMessage: 'Based on your response, we recommend seeking immediate support. If you are in immediate danger, please call your local emergency services or crisis hotline right away.',
+      };
+    }
+  }
+  return { isHighRisk: false };
+}
+
+export function mapCategoryToIssueKey(category) {
+  const mapping = {
+    anger: 'ANGER',
+    anxiety: 'ANXIETY',
+    stress: 'STRESS',
+    depression: 'DEPRESSION',
+    mood: 'DEPRESSION',
+    relationship: 'RELATIONSHIP',
+    self_esteem: 'SELF_ESTEEM',
+    selfesteem: 'SELF_ESTEEM',
+    sleep: 'SLEEP',
+    grief: 'GRIEF',
+    work: 'WORK_STRESS',
+    work_stress: 'WORK_STRESS',
+    emotional_regulation: 'EMOTIONAL_REGULATION',
+  };
+  return mapping[category?.toLowerCase()] || 'OTHER';
+}
+
+export class AIAnalysisService {
+  constructor() {
+    this.provider = process.env.AI_PROVIDER || 'none';
+    this.apiKey = process.env.AI_API_KEY;
+  }
+
+  async analyzeAssessment(input) {
+    const { assessmentAnswers = [], assessmentScores = {}, selectedMood = null, userDescription = '', availableIssues = [] } = input;
+    const riskCheck = checkHighRisk(userDescription);
+    if (riskCheck.isHighRisk) {
+      return {
+        primaryIssue: 'OTHER',
+        secondaryIssues: [],
+        confidence: {},
+        summary: riskCheck.safetyMessage,
+        isHighRisk: true,
+        safetyMessage: riskCheck.safetyMessage,
+        source: 'safety',
+      };
+    }
+    for (const ans of assessmentAnswers) {
+      if (ans.answer_text) {
+        const r = checkHighRisk(ans.answer_text);
+        if (r.isHighRisk) {
+          return {
+            primaryIssue: 'OTHER',
+            secondaryIssues: [],
+            confidence: {},
+            summary: r.safetyMessage,
+            isHighRisk: true,
+            safetyMessage: r.safetyMessage,
+            source: 'safety',
+          };
+        }
+      }
+    }
+    if (this.provider !== 'none' && this.apiKey) {
+      try {
+        const aiResult = await this.callAI(input);
+        if (aiResult) {
+          return { ...aiResult, isHighRisk: false, source: 'ai' };
+        }
+      } catch (err) {
+        console.warn('[aiAnalysis] AI call failed, falling back:', err.message);
+      }
+    }
+    return this.fallbackAnalysis(input);
+  }
+
+  async callAI(input) {
+    return null;
+  }
+
+  fallbackAnalysis(input) {
+    const { selectedMood } = input;
+    let primary = 'OTHER';
+    if (selectedMood) {
+      primary = selectedMood.toUpperCase();
+    }
+    let secondary = [];
+    const confidences = { [primary]: 0.7 };
+    let summary = 'Your responses indicate' concerns related to .;
+    if (secondary.length > 0) {
+      summary +=  'Additional areas of concern include' .;
+    }
+    summary += ' This categorization is based on your current concerns and responses.';
+    try {
+      const validated = AIResponseSchema.parse({
+        primaryIssue: primary,
+        secondaryIssues: secondary,
+        confidence: confidences,
+        summary,
+      });
+      return { ...validated, isHighRisk: false, source: 'fallback' };
+    } catch (err) {
+      return {
+        primaryIssue: 'OTHER',
+        secondaryIssues: [],
+        confidence: { OTHER: 0.5 },
+        summary: 'Your responses have been noted. We can help match you with an appropriate therapist based on your current concerns.',
+        isHighRisk: false,
+        source: 'fallback',
+      };
+    }
+  }
+
+  validateResponse(aiResponse) {
+    try {
+      return AIResponseSchema.parse(aiResponse);
+    } catch (err) {
+      console.error('[aiAnalysis] Invalid AI response:', err);
+      return null;
+    }
+  }
+}
+
+export const aiAnalysisService = new AIAnalysisService();
+
