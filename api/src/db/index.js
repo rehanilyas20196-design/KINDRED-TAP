@@ -14,11 +14,37 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 let driver = null;
 let initPromise = null;
 
+function pgOptions(connectionString) {
+  const mode = /[?&]sslmode=([^&]+)/i.exec(connectionString)?.[1]?.toLowerCase();
+
+  if (mode === "disable") return { connectionString, ssl: false };
+  if (mode === "verify-ca" || mode === "verify-full") {
+    return { connectionString, ssl: { rejectUnauthorized: true } };
+  }
+
+  // pg turns sslmode=require into ssl:{} (verify-full), which fails against the
+  // pooler certs. Drop the param and apply libpq's real require semantics.
+  const cleaned = mode
+    ? connectionString
+        .replace(/\?sslmode=[^&]+&?/i, "?")
+        .replace(/[?&]sslmode=[^&]+/i, "")
+        .replace(/\?$/, "")
+    : connectionString;
+
+  const host = /@([^/:?[]+)/.exec(cleaned)?.[1] ?? "";
+  const isLocal = /^(localhost|127\.|0\.0\.0\.0|\[?::1)/i.test(host);
+
+  return { connectionString: cleaned, ssl: isLocal ? false : { rejectUnauthorized: false } };
+}
+
 async function createPgDriver() {
   const { default: pg } = await import("pg");
 
+  const { connectionString, ssl } = pgOptions(env.databaseUrl);
+
   const pool = new pg.Pool({
-    connectionString: env.databaseUrl,
+    connectionString,
+    ssl,
     max: 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
