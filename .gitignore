@@ -12,6 +12,14 @@ dist/
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.p12
+.npmrc
+.netrc
+credentials*
+secrets*
+*.secret
 
 # logs / os
 *.log
