@@ -89,12 +89,32 @@ export function createApp() {
   return app;
 }
 
-async function start() {
-  await runMigrations();
-  await loadColumnMap(await getDriver());
+let ready = null;
+let app = null;
 
-  const app = createApp();
-  const server = app.listen(env.port, () => {
+function init() {
+  if (!ready) {
+    ready = (async () => {
+      await runMigrations();
+      await loadColumnMap(await getDriver());
+    })().catch((err) => {
+      ready = null;
+      throw err;
+    });
+  }
+  return ready;
+}
+
+/** Serverless entry: Vercel may resolve this module as the function handler. */
+export default async function handler(req, res) {
+  await init();
+  return (app ??= createApp())(req, res);
+}
+
+async function start() {
+  await init();
+
+  const server = (app ??= createApp()).listen(env.port, () => {
     console.log(`[api] Kindred Tap API listening on http://localhost:${env.port}`);
   });
 
