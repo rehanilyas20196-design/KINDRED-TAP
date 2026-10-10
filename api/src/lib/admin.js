@@ -64,6 +64,24 @@ async function databaseAdmin(email) {
 }
 
 /**
+ * bcrypt throws on a hash it cannot parse. A mangled paste into
+ * `admin_accounts.password_hash` is a data problem, not a server fault, so it
+ * answers as a failed login - and says so in the log, where somebody can see
+ * which of the two it was.
+ */
+async function comparePassword(password, storedHash) {
+  try {
+    return await bcrypt.compare(String(password ?? ""), storedHash);
+  } catch (error) {
+    console.error(
+      "[admin] Stored password hash is not valid bcrypt; treating the attempt as failed:",
+      error.message
+    );
+    return false;
+  }
+}
+
+/**
  * Checks an attempt without revealing which half was wrong. Returns `null`
  * when no admin is configured at all, so the caller can fail closed with a
  * message that says what to set rather than pretending the password was bad.
@@ -76,18 +94,15 @@ export async function verifyAdminCredentials(email, password) {
   if (fromEnv.email && fromEnv.passwordHash) {
     const emailMatches =
       fromEnv.email === String(email ?? "").trim().toLowerCase();
-    const ok = await bcrypt.compare(
-      String(password ?? ""),
+    const ok = await comparePassword(
+      password,
       emailMatches ? fromEnv.passwordHash : DECOY_HASH
     );
     return emailMatches && ok;
   }
 
   const row = await databaseAdmin(email);
-  const ok = await bcrypt.compare(
-    String(password ?? ""),
-    row?.password_hash || DECOY_HASH
-  );
+  const ok = await comparePassword(password, row?.password_hash || DECOY_HASH);
   if (ok && row) {
     await query("UPDATE admin_accounts SET last_login_at = now() WHERE id = $1", [
       row.id,
