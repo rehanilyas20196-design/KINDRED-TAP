@@ -3,6 +3,14 @@ import { env } from "../env.js";
 
 const EMBEDDING_MODEL = "gemini-embedding-001";
 
+/**
+ * Text model used for grounded answer generation. Overridable because the
+ * available model names move and differ per account - the key in this project
+ * rejects older names outright - so a wrong name should be a config fix, not
+ * a code change.
+ */
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash";
+
 let client = null;
 
 function getClient() {
@@ -73,4 +81,54 @@ export async function generateEmbeddings(texts) {
 
 export function isConfigured() {
   return Boolean(env.geminiApiKey);
+}
+
+/**
+ * Plain text completion. Kept deliberately bare: no tools, no function
+ * calling, no code execution. Callers decide what the model is allowed to
+ * see; the model is never allowed to act.
+ *
+ * A transient "model is busy" is retried once, because the alternative is a
+ * user seeing a failure for something that clears in a second.
+ */
+export async function generateText({ prompt, systemInstruction, temperature = 0.2, maxOutputTokens = 700 }) {
+  if (!prompt || typeof prompt !== "string" || prompt.trim() === "") {
+    throw new Error("Prompt must be a non-empty string");
+  }
+
+  const client = getClient();
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await client.models.generateContent({
+        model: TEXT_MODEL,
+        contents: prompt,
+        config: {
+          ...(systemInstruction ? { systemInstruction } : {}),
+          temperature,
+          maxOutputTokens,
+        },
+      });
+
+      const text = response?.text;
+      if (typeof text !== "string" || text.trim() === "") {
+        throw new Error("No text returned from Gemini");
+      }
+
+      return text.trim();
+    } catch (error) {
+      const message = error?.message ?? "Unknown error";
+      const transient = attempt === 1 && /\b(429|503|UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded)\b/i.test(message);
+
+      if (transient) {
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        continue;
+      }
+
+      console.error("[gemini] Text generation failed:", message);
+      throw new Error(`Failed to generate text: ${message}`);
+    }
+  }
+
+  throw new Error("Failed to generate text: exhausted retries");
 }

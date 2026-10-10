@@ -470,3 +470,17 @@ export const therapistSpecialtiesSchema = z.object({
     .min(1, "Choose at least one specialty")
     .max(20, "Choose twenty or fewer"),
 });
+
+/* ------------------------------------------------------------------ */
+/* Support assistant                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Length-bounded on purpose: the question is embedded and then handed to a
+ * paid model, so a megabyte of text is a cost problem before it is anything
+ * else. The 256kb body limit on the API is the outer stop; this is the inner
+ * one that actually means anything.
+ */
+export const assistantAskSchema = z.object({
+  question: requiredText(2, 1000, "Your question"),
+});

@@ -20,6 +20,8 @@ import { hashToken } from "../lib/tokens.js";
 import { loadRoleProfile, publicUser } from "../lib/users.js";
 import { ROLES, ROLE_TABLES } from "../lib/roles.js";
 import { AUDIT_ACTIONS, logAudit } from "../lib/audit.js";
+import { rag } from "../services/rag.js";
+import { isConfigured as geminiConfigured } from "../services/gemini.js";
 
 export const adminRouter = Router();
 
@@ -163,6 +165,77 @@ adminRouter.post(
     const token = (req.get("authorization") || "").split(" ")[1];
     if (token) await revokeAdminSession(hashToken(token));
     res.json({ ok: true });
+  })
+);
+
+/* ------------------------------------------------------------------ */
+/* Knowledge base (what the support assistant is allowed to know)      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Only an admin can write to the corpus. That is the whole reason the
+ * assistant cannot leak private records: there is no path from anything a
+ * user submits into these tables.
+ */
+const kbDocumentSchema = z.object({
+  source: z
+    .string()
+    .trim()
+    .min(3)
+    .max(200)
+    .regex(/^[a-zA-Z0-9][a-zA-Z0-9:._-]*$/, "Use letters, numbers, colon, dot, dash or underscore"),
+  title: z.string().trim().min(2).max(160),
+  kind: z.enum(["doc", "faq", "policy"]).default("doc"),
+  content: z
+    .string()
+    .trim()
+    .min(20, "A document needs at least a few words")
+    .max(200_000, "Keep a document under 200,000 characters"),
+});
+
+adminRouter.get(
+  "/kb/documents",
+  asyncHandler(async (req, res) => {
+    const [documents, stats] = await Promise.all([rag.listDocuments(), rag.stats()]);
+    res.json({ documents, stats });
+  })
+);
+
+/**
+ * Reindexes the shipped corpus, or indexes one document posted in the body.
+ * Posting nothing reindexes everything; documents whose content has not
+ * changed are skipped by hash, so a reindex is cheap and can be run freely.
+ */
+adminRouter.post(
+  "/kb/index",
+  asyncHandler(async (req, res) => {
+    // Indexing embeds text, which needs the key. Saying so is more useful
+    // than a 500 out of the Gemini client.
+    if (!geminiConfigured()) {
+      throw new HttpError(503, "GEMINI_API_KEY is not configured, so the knowledge base cannot be indexed");
+    }
+
+    if (!req.body || Object.keys(req.body).length === 0) {
+      const results = await rag.indexCorpus();
+      return res.json({ results, stats: await rag.stats() });
+    }
+
+    const document = parse(kbDocumentSchema, req.body);
+    const result = await rag.indexDocument(document);
+    return res.json({ results: [result], stats: await rag.stats() });
+  })
+);
+
+adminRouter.delete(
+  "/kb/documents/:source",
+  asyncHandler(async (req, res) => {
+    const source = String(req.params.source ?? "").trim();
+    if (!source) throw badRequest("A document source is required");
+
+    const removed = await rag.removeDocument(source);
+    if (!removed) throw notFound("No knowledge document with that source");
+
+    res.json({ removed: true, source, stats: await rag.stats() });
   })
 );
 
