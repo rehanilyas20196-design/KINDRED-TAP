@@ -8,22 +8,28 @@ const BCRYPT_ROUNDS = 10;
 /**
  * Admin credentials.
  *
- * The admin is deliberately not a row in `users`: there is nothing for the
- * admin list to show, nothing for an approval flow to approve, and no password
- * hash sitting in a table the rest of the product reads. The identity lives in
- * the environment instead - ADMIN_EMAIL plus a bcrypt ADMIN_PASSWORD_HASH -
- * and sessions live in `admin_sessions`.
+ * Two sources, checked in this order:
+ *
+ *   1. The environment - ADMIN_EMAIL plus a bcrypt ADMIN_PASSWORD_HASH. When
+ *      both are set they win outright, which is useful for a one-off login
+ *      without touching the database.
+ *   2. The `admin_accounts` table, for when the environment says nothing.
+ *
+ * Either way the admin is deliberately not a row in `users`: there is nothing
+ * for the admin list to show, nothing for an approval flow to approve, and no
+ * password hash sitting in a table the rest of the product reads. Sessions
+ * live in `admin_sessions`.
  */
 
 /** Same decoy hash the user login compares against, so a miss costs the same as a hit. */
 const DECOY_HASH =
   "$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012";
 
-let cached = null;
+let envCache = null;
 
-/** Resolves the configured credentials once; bcrypt of a plain password is not free. */
-async function credentials() {
-  if (cached) return cached;
+/** Resolves the environment credentials once; bcrypt of a plain password is not free. */
+async function envCredentials() {
+  if (envCache) return envCache;
 
   const email = env.adminEmail ? env.adminEmail.trim().toLowerCase() : null;
   let passwordHash = env.adminPasswordHash || null;
@@ -32,14 +38,29 @@ async function credentials() {
     passwordHash = await bcrypt.hash(env.adminPassword, BCRYPT_ROUNDS);
   }
 
-  cached = { email, passwordHash };
-  return cached;
+  envCache = { email, passwordHash };
+  return envCache;
 }
 
-/** True when the environment actually names an admin. */
+/** True when either source actually names an active admin. */
 export async function adminConfigured() {
-  const { email, passwordHash } = await credentials();
-  return Boolean(email && passwordHash);
+  const fromEnv = await envCredentials();
+  if (fromEnv.email && fromEnv.passwordHash) return true;
+
+  const row = await queryOne(
+    "SELECT 1 AS found FROM admin_accounts WHERE is_active LIMIT 1"
+  );
+  return Boolean(row);
+}
+
+/** Active database admin, matched the same way a login attempt would. */
+async function databaseAdmin(email) {
+  return queryOne(
+    `SELECT id, email, password_hash
+       FROM admin_accounts
+      WHERE is_active AND lower(email) = lower($1)`,
+    [String(email ?? "").trim()]
+  );
 }
 
 /**
@@ -51,16 +72,28 @@ export async function verifyAdminCredentials(email, password) {
   const configured = await adminConfigured();
   if (!configured) return null;
 
-  const creds = await credentials();
-  const emailMatches =
-    creds.email === String(email ?? "").trim().toLowerCase();
+  const fromEnv = await envCredentials();
+  if (fromEnv.email && fromEnv.passwordHash) {
+    const emailMatches =
+      fromEnv.email === String(email ?? "").trim().toLowerCase();
+    const ok = await bcrypt.compare(
+      String(password ?? ""),
+      emailMatches ? fromEnv.passwordHash : DECOY_HASH
+    );
+    return emailMatches && ok;
+  }
 
+  const row = await databaseAdmin(email);
   const ok = await bcrypt.compare(
     String(password ?? ""),
-    emailMatches ? creds.passwordHash : DECOY_HASH
+    row?.password_hash || DECOY_HASH
   );
-
-  return emailMatches && ok;
+  if (ok && row) {
+    await query("UPDATE admin_accounts SET last_login_at = now() WHERE id = $1", [
+      row.id,
+    ]);
+  }
+  return ok;
 }
 
 /** Issues a revocable admin session and records its hash. */

@@ -106,7 +106,7 @@ adminRouter.post(
     const result = await verifyAdminCredentials(email, password);
     if (result === null) {
       throw badRequest(
-        "Admin access is not configured. Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH in the API .env file."
+        "Admin access is not configured. Add a row to admin_accounts, or set ADMIN_EMAIL and ADMIN_PASSWORD_HASH in the environment."
       );
     }
     if (!result) {
