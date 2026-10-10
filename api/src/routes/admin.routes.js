@@ -4,6 +4,7 @@ import { query, queryOne } from "../db/index.js";
 import {
   asyncHandler,
   badRequest,
+  HttpError,
   notFound,
   parse,
   unauthorized,
@@ -102,8 +103,19 @@ adminRouter.post(
 
     // Fail closed: with no admin configured there is nothing to log in to, and
     // saying "wrong password" would send somebody hunting for a typo that is
-    // not there.
-    const result = await verifyAdminCredentials(email, password);
+    // not there. A missing table is a schema problem, and is named as one
+    // rather than being handed back as a generic 500.
+    let result;
+    try {
+      result = await verifyAdminCredentials(email, password);
+    } catch (error) {
+      console.error("[admin] credential check failed:", error);
+      throw new HttpError(
+        500,
+        "Admin login cannot check credentials: the admin tables are missing. Run the migrations against the database this API uses."
+      );
+    }
+
     if (result === null) {
       throw badRequest(
         "Admin access is not configured. Add a row to admin_accounts, or set ADMIN_EMAIL and ADMIN_PASSWORD_HASH in the environment."
@@ -115,7 +127,16 @@ adminRouter.post(
 
     attempts.delete(key);
 
-    const token = await issueAdminSession(email.trim().toLowerCase());
+    let token;
+    try {
+      token = await issueAdminSession(email.trim().toLowerCase());
+    } catch (error) {
+      console.error("[admin] could not create the admin session:", error);
+      throw new HttpError(
+        500,
+        "Admin credentials were accepted, but the session could not be created: the admin_sessions table is missing. Run the migrations against the database this API uses."
+      );
+    }
     await logAudit({
       actorRole: "admin",
       action: AUDIT_ACTIONS.ADMIN_LOGIN,
