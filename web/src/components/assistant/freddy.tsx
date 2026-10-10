@@ -26,6 +26,11 @@ const MOOD_ARIA: Record<FreddyMood, string> = {
 /**
  * Freddy, the support assistant's face.
  *
+ * @bible-strong/avatar-react is AGPL-3.0. Anything that ships alongside it
+ * inherits the network-use obligations, so this is a deliberate choice and
+ * not an incidental dependency. Remove this component and the package from
+ * web/package.json together if that ever stops being acceptable.
+ *
  * The mood is driven by the parent - he is not decoration that animates on a
  * loop for its own sake. Each state maps onto a real moment in the
  * conversation so a person can tell at a glance whether the assistant is
