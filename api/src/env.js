@@ -30,10 +30,28 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   dbStrict: process.env.DB_STRICT === "true",
   geminiApiKey: process.env.GEMINI_API_KEY?.trim() || null,
+  /**
+   * Admin panel credentials (see api/src/lib/admin.js).
+   *
+   * ADMIN_PASSWORD_HASH is a bcrypt hash and is what production should use;
+   * ADMIN_PASSWORD is a plain value for local development only, hashed once at
+   * boot so the comparison is still bcrypt. Neither is ever sent to the web
+   * app, and neither lives in the users table - there is no admin row to list,
+   * approve or hijack.
+   */
+  adminEmail: process.env.ADMIN_EMAIL?.trim() || null,
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH?.trim() || null,
+  adminPassword: process.env.ADMIN_PASSWORD?.trim() || null,
 };
 
 if (env.nodeEnv === "production" && env.jwtSecret === "dev-only-change-me") {
   throw new Error("JWT_SECRET must be set to a real secret in production.");
+}
+
+if (env.nodeEnv === "production" && !env.adminPasswordHash && env.adminPassword) {
+  console.warn(
+    "[env] ADMIN_PASSWORD is plain text. Prefer ADMIN_PASSWORD_HASH (a bcrypt hash) in production."
+  );
 }
 
 // A Supabase project URL (https://...supabase.co) is a REST endpoint, not a

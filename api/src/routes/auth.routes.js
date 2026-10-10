@@ -9,9 +9,14 @@ import {
   parse,
   unauthorized,
 } from "../middleware/asyncHandler.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAuthAllowUnverified } from "../middleware/auth.js";
 import { loginSchema, signupSchema } from "../lib/schemas.js";
-import { ETHICS_VERSION, ROLE_PORTAL_NAMES, ROLE_REQUIRES_ETHICS } from "../lib/roles.js";
+import {
+  ETHICS_VERSION,
+  ROLE_PORTAL_NAMES,
+  ROLE_REQUIRES_ADMIN_APPROVAL,
+  ROLE_REQUIRES_ETHICS,
+} from "../lib/roles.js";
 import { findUserByEmail, loadRoleProfile, nextStepFor, publicUser } from "../lib/users.js";
 import { hashToken, signToken } from "../lib/tokens.js";
 
@@ -53,6 +58,10 @@ authRouter.post(
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const needsEthics = ROLE_REQUIRES_ETHICS[role];
     const ethicsAgreed = needsEthics && ethicsAccepted === true;
+    // The three professional portals hold clinical responsibility, so their
+    // signups land in the admin's verification queue. The public and peer
+    // portals go straight to the profile step as before.
+    const status = ROLE_REQUIRES_ADMIN_APPROVAL[role] ? "pending_review" : "pending_profile";
 
     // Signup sets the portal straight away, so each person lands in the right
     // portal instead of choosing later.
@@ -61,13 +70,14 @@ authRouter.post(
          email, password_hash, full_name, role, status,
          terms_accepted_at, ethics_agreed_at, ethics_version, ethics_accepted
        )
-       VALUES ($1, $2, $3, $4, 'pending_profile', now(), $5, $6, $7)
+       VALUES ($1, $2, $3, $4, $5, now(), $6, $7, $8)
        RETURNING id`,
       [
         email,
         passwordHash,
         fullName,
         role,
+        status,
         ethicsAgreed ? new Date() : null,
         ethicsAgreed ? ETHICS_VERSION : null,
         ethicsAgreed,
@@ -120,10 +130,11 @@ authRouter.post(
   })
 );
 
-/** Silent re-authentication on page load. */
+/** Silent re-authentication on page load. Unverified accounts need this to
+ *  render the waiting screen, so it runs on the permissive guard. */
 authRouter.get(
   "/me",
-  requireAuth,
+  requireAuthAllowUnverified,
   asyncHandler(async (req, res) => {
     const user = await publicUser(req.user.id);
     const profile = await loadRoleProfile(user);
@@ -133,7 +144,7 @@ authRouter.get(
 
 authRouter.post(
   "/logout",
-  requireAuth,
+  requireAuthAllowUnverified,
   asyncHandler(async (req, res) => {
     const token = (req.get("authorization") || "").split(" ")[1];
     if (token) {

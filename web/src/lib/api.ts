@@ -25,6 +25,9 @@ export interface AuthUser {
   fullName: string | null;
   role: string;
   status: string;
+  /** Admin's note when the account was rejected; empty until it is reviewed. */
+  reviewNote?: string | null;
+  reviewedAt?: string | null;
 }
 
 /** Shape returned by POST /api/auth/signup and POST /api/auth/login. */

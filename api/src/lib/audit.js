@@ -65,7 +65,12 @@ export const AUDIT_ACTIONS = {
   PAYOUT_VIEWED: "payout.viewed",
   PARTNERSHIP_UPDATED: "partnership.updated",
   DOCUMENT_ACCESSED: "document.accessed",
-  PARTNER_MESSAGE_SENT: "partner_message.sent",
+  PARTNER_MESSAGE_SENT: "partner.message_sent",
+  // Admin panel. The actor is the environment-configured admin, which has no
+  // users row, so these are written with actor_role only.
+  ADMIN_LOGIN: "admin.login",
+  ACCOUNT_APPROVED: "account.approved",
+  ACCOUNT_REJECTED: "account.rejected",
 };
 
 /**

@@ -21,6 +21,8 @@ export const PUBLIC_USER_COLUMNS = [
   'personality_scores AS "personalityScores"',
   'onboarded_at       AS "onboardedAt"',
   'last_login_at      AS "lastLoginAt"',
+  'review_note        AS "reviewNote"',
+  'reviewed_at        AS "reviewedAt"',
   'created_at         AS "createdAt"',
 ];
 
@@ -76,6 +78,9 @@ export async function loadRoleProfile(user) {
 export function nextStepFor(user) {
   if (!user) return "/login";
   if (!user.role) return "/choose-portal";
+  // Waiting on, or refused by, the admin: nowhere in the portal yet.
+  if (user.status === "pending_review") return "/verification/pending";
+  if (user.status === "rejected") return "/verification/rejected";
   if (user.status !== "active") return `/portal/${user.role}/profile`;
   return `/portal/${user.role}`;
 }

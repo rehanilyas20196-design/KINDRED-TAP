@@ -92,6 +92,26 @@ export const ROLE_REQUIRES_ETHICS = {
   collaborative_clinic: true,
 };
 
+/**
+ * Portals whose signups wait for an admin decision before the account can be
+ * used at all. The three professional portals hold clinical responsibility, so
+ * a person must be checked against their details in /admin first; the public
+ * and peer portals keep signing up straight away.
+ */
+export const ROLE_REQUIRES_ADMIN_APPROVAL = {
+  user: false,
+  supporter: false,
+  therapist: false,
+  clinical_advisor: true,
+  clinical_supervisor: true,
+  collaborative_clinic: true,
+};
+
+/** Role keys in `ROLE_REQUIRES_ADMIN_APPROVAL` that evaluate to true. */
+export const ADMIN_APPROVAL_ROLES = Object.keys(ROLE_REQUIRES_ADMIN_APPROVAL).filter(
+  (role) => ROLE_REQUIRES_ADMIN_APPROVAL[role]
+);
+
 const ROLE_COPY = {
   user: {
     tagline: "Find the right support for how you feel",

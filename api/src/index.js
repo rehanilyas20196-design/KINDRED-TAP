@@ -26,6 +26,7 @@ import supervisorRouter from "./routes/supervisor.routes.js";
 import supervisorOpsRouter from "./routes/supervisorOps.routes.js";
 import clinicRouter from "./routes/clinic.routes.js";
 import clinicOpsRouter from "./routes/clinicOps.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 
 export function createApp() {
   const app = express();
@@ -83,6 +84,9 @@ export function createApp() {
   // Same base path, no overlapping routes.
   app.use("/api/clinic", clinicRouter);
   app.use("/api/clinic", clinicOpsRouter);
+  // The admin panel. Its own session table and its own guard: no route in
+  // here is reachable with a portal user's token.
+  app.use("/api/admin", adminRouter);
   app.use("/api/meta", metaRouter);
 
   app.use(notFoundHandler);

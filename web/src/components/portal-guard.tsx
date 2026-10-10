@@ -53,6 +53,18 @@ export function usePortalGuard(role: string): PortalGuardState {
         const data = await apiFetch<MeResponse>("/api/me");
         if (cancelled) return;
 
+        // An account the admin has not cleared never reaches a portal page,
+        // even if the URL is typed by hand. The API refuses the data routes
+        // too; this only stops the page rendering half a portal around it.
+        if (data.user.status === "pending_review") {
+          router.replace("/verification/pending");
+          return;
+        }
+        if (data.user.status === "rejected") {
+          router.replace("/verification/rejected");
+          return;
+        }
+
         const portal = portalFor(data.user.role);
         if (data.user.role !== role) {
           setState({

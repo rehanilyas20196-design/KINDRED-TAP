@@ -1,7 +1,24 @@
 import { hashToken, verifyToken } from "../lib/tokens.js";
 import { sessionUserByTokenHash } from "../lib/users.js";
 
-export async function requireAuth(req, res, next) {
+/**
+ * Where an unverified account is sent while it waits for the admin.
+ * `code` lets the web app pick a screen without re-deriving the rule.
+ */
+const UNVERIFIED = {
+  pending_review: {
+    code: "verification_required",
+    error: "Your account is awaiting admin verification",
+    next: "/verification/pending",
+  },
+  rejected: {
+    code: "account_rejected",
+    error: "Your account was not approved",
+    next: "/verification/rejected",
+  },
+};
+
+async function resolveSession(req, res, next, { allowUnverified }) {
   const header = req.get("authorization") || "";
   const [scheme, token] = header.split(" ");
 
@@ -24,8 +41,30 @@ export async function requireAuth(req, res, next) {
     return res.status(403).json({ error: "This account is suspended" });
   }
 
+  // Everything except the "who am I" routes stays shut until the admin has
+  // decided. The me routes opt in so the waiting screen can still render.
+  const hold = allowUnverified ? null : UNVERIFIED[user.status];
+  if (hold) {
+    return res
+      .status(403)
+      .json({ error: hold.error, code: hold.code, next: hold.next });
+  }
+
   req.user = user;
   return next();
+}
+
+export async function requireAuth(req, res, next) {
+  return resolveSession(req, res, next, { allowUnverified: false });
+}
+
+/**
+ * Same session checks, but an account waiting on (or refused by) the admin
+ * still gets through. Only the routes that render those waiting screens use
+ * this; every route that reads or writes portal data keeps `requireAuth`.
+ */
+export async function requireAuthAllowUnverified(req, res, next) {
+  return resolveSession(req, res, next, { allowUnverified: true });
 }
 
 /**

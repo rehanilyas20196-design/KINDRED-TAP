@@ -116,12 +116,17 @@ before(async () => {
     ethicsAccepted: true,
   });
   tokens.supervisor = sup.json.token;
+
+  // Professional portal signups wait for the admin. This suite is about
+  // supervision, not the review queue, so the gate is cleared directly.
+  await query("UPDATE users SET status = 'pending_profile' WHERE id = $1", [sup.json.user.id]);
+
   const savedProfile = await call("PUT", "/api/profiles/clinical_supervisor", supervisorProfile, tokens.supervisor);
   assert.equal(savedProfile.status, 200);
 
   // A therapist and a client, both signed up but not required to be active:
-  // requireAuth only blocks suspended accounts, and the role check is what the
-  // supervisor routes rely on.
+  // requireAuth only blocks suspended accounts and accounts the admin has not
+  // cleared yet, and the role check is what the supervisor routes rely on.
   const therapist = await call("POST", "/api/auth/signup", {
     email: `therapist.${uniq}@example.com`,
     password: "Passw0rd123",

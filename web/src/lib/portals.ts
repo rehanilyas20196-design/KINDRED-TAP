@@ -145,6 +145,12 @@ export function signupPath(role?: string | null): string {
 export function describeNextStep(next: string): string {
   if (!next || next === "/login") return "You are signed in.";
   if (next === "/choose-portal") return "Choose the portal you want to work in to continue.";
+  if (next === "/verification/pending") {
+    return "Your account is with an admin for verification. The portal opens once they approve it.";
+  }
+  if (next === "/verification/rejected") {
+    return "An admin has reviewed this account. Sign in to read their note.";
+  }
 
   const portal = portalFor(next.split("/")[2]);
   if (next.endsWith("/profile")) {

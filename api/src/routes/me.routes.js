@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { query } from "../db/index.js";
 import { asyncHandler, parse } from "../middleware/asyncHandler.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireAuthAllowUnverified } from "../middleware/auth.js";
 import { loadRoleProfile, nextStepFor, publicUser } from "../lib/users.js";
 import {
   ALL_ROLE_META,
@@ -13,10 +13,14 @@ import { LIKERT_OPTIONS, TRAITS } from "../data/personalityQuestions.js";
 
 export const meRouter = Router();
 
-meRouter.use(requireAuth);
-
+/**
+ * "Who am I" has to answer for an account that is still waiting on the admin,
+ * otherwise the waiting screen has nothing to show. Writing to the account
+ * stays behind the strict guard.
+ */
 meRouter.get(
   "/",
+  requireAuthAllowUnverified,
   asyncHandler(async (req, res) => {
     const user = await publicUser(req.user.id);
     const profile = await loadRoleProfile(user);
@@ -26,6 +30,7 @@ meRouter.get(
 
 meRouter.patch(
   "/",
+  requireAuth,
   asyncHandler(async (req, res) => {
     const { fullName } = parse(
       z.object({
