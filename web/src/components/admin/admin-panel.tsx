@@ -5,6 +5,7 @@ import { AdminLogin } from "@/components/admin/admin-login";
 import { AdminUsers } from "@/components/admin/admin-users";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
 import { Logo } from "@/components/logo";
+import { PORTALS } from "@/lib/portals";
 import {
   adminFetch,
   clearAdminSession,
@@ -15,6 +16,12 @@ import {
 import { messageFor } from "@/lib/api";
 
 type PanelState = "checking" | "signed-out" | "ready";
+
+/**
+ * Portal keys the product knows about, in the order the product lists them.
+ * Anything else in the counts is an account that has not picked a portal yet.
+ */
+const PORTAL_ORDER = PORTALS.map((portal) => portal.key);
 
 /**
  * Shell for /admin. Nothing here is trusted for authorisation - the panel only
@@ -28,6 +35,20 @@ export function AdminPanel() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+
+  // The portal breakdown above and the account list below are the same
+  // question asked two ways, so they share one filter rather than drifting.
+  const [role, setRole] = useState("");
+  const [status, setStatus] = useState("pending_review");
+  const [page, setPage] = useState(1);
+
+  /** Picking a portal answers "who is on the platform", so the queue filter
+   *  would hide most of what was just asked for. */
+  function pickPortal(nextRole: string) {
+    setRole(nextRole);
+    setStatus("");
+    setPage(1);
+  }
 
   const signOut = useCallback(() => {
     clearAdminSession();
@@ -156,19 +177,110 @@ export function AdminPanel() {
           <Metric label="All accounts" value={stats?.total ?? null} />
         </section>
 
-        {stats ? (
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(stats.byRole).map(([role, count]) => (
-              <Badge key={role} tone="neutral">
-                {role.replace(/_/g, " ")} · {count}
-              </Badge>
+        <section aria-labelledby="admin-portals-heading" className="card p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2
+              id="admin-portals-heading"
+              className="text-sm font-semibold tracking-tight text-slate-900 dark:text-white"
+            >
+              Accounts by portal
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Select a portal to list its accounts below.
+            </p>
+          </div>
+
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            <PortalTile
+              label="All portals"
+              total={stats?.total ?? null}
+              active={stats?.active ?? null}
+              selected={role === ""}
+              onClick={() => pickPortal("")}
+            />
+            {PORTALS.map((portal) => (
+              <PortalTile
+                key={portal.key}
+                label={portal.label}
+                total={stats ? (stats.byRole[portal.key] ?? 0) : null}
+                active={stats ? (stats.byRoleStatus[portal.key]?.active ?? 0) : null}
+                selected={role === portal.key}
+                onClick={() => pickPortal(portal.key)}
+              />
+            ))}
+            {portalKeysMissingFrom(PORTAL_ORDER, stats).map((key) => (
+              <PortalTile
+                key={key}
+                label={key === "unassigned" ? "No portal yet" : key.replace(/_/g, " ")}
+                total={stats?.byRole[key] ?? null}
+                active={stats?.byRoleStatus[key]?.active ?? null}
+                selected={role === key}
+                onClick={() => pickPortal(key)}
+              />
             ))}
           </div>
-        ) : null}
+        </section>
 
-        <AdminUsers onSessionLost={signOut} />
+        <AdminUsers
+          role={role}
+          status={status}
+          page={page}
+          onFilterChange={(next) => {
+            if (next.role !== undefined) setRole(next.role);
+            if (next.status !== undefined) setStatus(next.status);
+            if (next.page !== undefined) setPage(next.page);
+          }}
+          onSessionLost={signOut}
+        />
       </main>
     </div>
+  );
+}
+
+/** Roles that have accounts but are not one of the product's six portals. */
+function portalKeysMissingFrom(known: string[], stats: AdminStats | null): string[] {
+  if (!stats) return [];
+  return Object.keys(stats.byRole)
+    .filter((key) => !known.includes(key))
+    .sort();
+}
+
+function PortalTile({
+  label,
+  total,
+  active,
+  selected,
+  onClick,
+}: {
+  label: string;
+  total: number | null;
+  active: number | null;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={[
+        "rounded-xl border px-4 py-3 text-left transition",
+        selected
+          ? "border-teal-600 bg-teal-50 ring-1 ring-teal-600 dark:border-teal-500 dark:bg-teal-500/10 dark:ring-teal-500"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 dark:hover:bg-slate-800/60",
+      ].join(" ")}
+    >
+      <span className="block text-sm font-medium text-slate-900 dark:text-white">{label}</span>
+      <span className="mt-1 flex items-baseline gap-2">
+        <span className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          {total === null ? "—" : total}
+        </span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">account{total === 1 ? "" : "s"}</span>
+      </span>
+      {active !== null && active > 0 ? (
+        <Badge tone="success">{active} active</Badge>
+      ) : null}
+    </button>
   );
 }
 

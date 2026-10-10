@@ -191,7 +191,20 @@ adminRouter.get(
       rows.map((row) => [row.role ?? "unassigned", row.count])
     );
 
-    res.json({ ...totals, byRole, configured: await adminConfigured() });
+    // Per portal, how far each account has got. "On the platform" means
+    // active; everything else is still working towards it.
+    const { rows: statusRows } = await query(
+      `SELECT role, status, count(*)::int AS count
+         FROM users GROUP BY role, status`
+    );
+
+    const byRoleStatus = {};
+    for (const row of statusRows) {
+      const key = row.role ?? "unassigned";
+      byRoleStatus[key] = { ...(byRoleStatus[key] ?? {}), [row.status]: row.count };
+    }
+
+    res.json({ ...totals, byRole, byRoleStatus, configured: await adminConfigured() });
   })
 );
 

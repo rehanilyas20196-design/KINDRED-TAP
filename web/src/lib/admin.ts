@@ -46,6 +46,8 @@ export interface AdminStats {
   rejected: number;
   suspended: number;
   byRole: Record<string, number>;
+  /** Per portal, how many accounts sit in each status. */
+  byRoleStatus: Record<string, Record<string, number>>;
   configured: boolean;
 }
 

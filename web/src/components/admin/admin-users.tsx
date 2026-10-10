@@ -53,17 +53,31 @@ function portalRequiresApproval(role: string | null): boolean {
   return role === "clinical_advisor" || role === "clinical_supervisor" || role === "collaborative_clinic";
 }
 
+/** The account list's filter, owned by the panel so the portal breakdown and
+ *  the table below it can never disagree about what is being shown. */
+export interface AdminUserFilter {
+  role: string;
+  status: string;
+  page: number;
+}
+
 /**
  * Every account in the product, newest verification requests first. Opening a
- * row shows everything the platform holds about that person so the decision is
- * made on the information, not on the email alone.
+ * row shows everything the platform holds about that person so the decision
+ * is made on the information, not on the email alone.
  */
-export function AdminUsers({ onSessionLost }: { onSessionLost: () => void }) {
-  const [status, setStatus] = useState("pending_review");
-  const [role, setRole] = useState("");
+export function AdminUsers({
+  role,
+  status,
+  page,
+  onFilterChange,
+  onSessionLost,
+}: AdminUserFilter & {
+  onFilterChange: (next: Partial<AdminUserFilter>) => void;
+  onSessionLost: () => void;
+}) {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
 
   const [data, setData] = useState<AdminUserList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -192,7 +206,7 @@ export function AdminUsers({ onSessionLost }: { onSessionLost: () => void }) {
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  setPage(1);
+                  onFilterChange({ page: 1 });
                   setQuery(search.trim());
                 }
               }}
@@ -207,10 +221,7 @@ export function AdminUsers({ onSessionLost }: { onSessionLost: () => void }) {
               id="admin-status"
               className="field"
               value={status}
-              onChange={(event) => {
-                setStatus(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => onFilterChange({ status: event.target.value, page: 1 })}
             >
               <option value="">All statuses</option>
               {STATUS_OPTIONS.map((value) => (
@@ -229,10 +240,7 @@ export function AdminUsers({ onSessionLost }: { onSessionLost: () => void }) {
               id="admin-role"
               className="field"
               value={role}
-              onChange={(event) => {
-                setRole(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => onFilterChange({ role: event.target.value, page: 1 })}
             >
               <option value="">All portals</option>
               {PORTALS.map((portal) => (
@@ -280,11 +288,9 @@ export function AdminUsers({ onSessionLost }: { onSessionLost: () => void }) {
                     variant="secondary"
                     size="sm"
                     onClick={() => {
-                      setStatus("pending_review");
-                      setRole("");
+                      onFilterChange({ status: "pending_review", role: "", page: 1 });
                       setSearch("");
                       setQuery("");
-                      setPage(1);
                     }}
                   >
                     Show the verification queue
@@ -356,7 +362,7 @@ export function AdminUsers({ onSessionLost }: { onSessionLost: () => void }) {
               variant="secondary"
               size="sm"
               disabled={page <= 1 || loading}
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              onClick={() => onFilterChange({ page: Math.max(1, page - 1) })}
             >
               Previous
             </Button>
@@ -367,7 +373,7 @@ export function AdminUsers({ onSessionLost }: { onSessionLost: () => void }) {
               variant="secondary"
               size="sm"
               disabled={page >= totalPages || loading}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => onFilterChange({ page: page + 1 })}
             >
               Next
             </Button>
