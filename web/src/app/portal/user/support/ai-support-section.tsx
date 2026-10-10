@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AI_DISCLAIMER, AI_SUGGESTIONS, aiReply, type AiReply } from "@/lib/ai-support";
 import { askPlatformAssistant, isPlatformQuestion, type AssistantCitation } from "@/lib/assistant";
-import { Freddy, type FreddyMood } from "@/components/assistant/freddy";
+import { Cubee, type CubeeMood } from "@/components/cubee";
 import { NoteTone, SupportSection, inputClass } from "./parts";
 import { Button } from "@/components/ui";
 import { Icon } from "@/components/icons";
@@ -23,7 +23,7 @@ interface ChatLine {
 const OPENING_LINE =
   "I can help you put words to how you feel, prepare for a session, or find the right part of the app. What has today been like?";
 
-const MOOD_LABEL: Record<FreddyMood, string> = {
+const MOOD_LABEL: Record<CubeeMood, string> = {
   idle: "Ready when you are",
   listening: "Listening",
   thinking: "Looking that up in our documentation",
@@ -55,7 +55,7 @@ export function AiSupportSection({
     { role: "assistant", kind: "support", text: OPENING_LINE, source: "browser" },
   ]);
   const [input, setInput] = useState("");
-  const [mood, setMood] = useState<FreddyMood>("idle");
+  const [mood, setMood] = useState<CubeeMood>("idle");
   const [busy, setBusy] = useState(false);
 
   function append(line: ChatLine) {
@@ -131,9 +131,9 @@ export function AiSupportSection({
         <NoteTone tone="warning">{AI_DISCLAIMER}</NoteTone>
 
         <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
-          <Freddy mood={mood} size={84} />
+          <Cubee mood={mood} size={84} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-900 dark:text-white">Freddy</p>
+            <p className="text-xs font-semibold text-slate-900 dark:text-white">Cubee</p>
             <p
               role="status"
               aria-live="polite"

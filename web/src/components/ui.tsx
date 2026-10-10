@@ -10,6 +10,8 @@ import Link from "next/link";
 import { useEffect, useRef, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
+import { Cubee } from "@/components/cubee";
+
 /* ------------------------------------------------------------------ */
 /* Buttons                                                             */
 /* ------------------------------------------------------------------ */
@@ -327,7 +329,9 @@ export function EmptyState({
         >
           {icon}
         </span>
-      ) : null}
+      ) : (
+        <Cubee size={64} />
+      )}
       <p className="mt-3.5 text-sm font-semibold text-slate-900">{title}</p>
       {description ? (
         <p className="mt-1.5 max-w-sm text-sm leading-6 text-slate-500">{description}</p>

@@ -12,6 +12,7 @@ import { PORTALS, type PortalMeta, type Role } from "@/lib/portals";
 import { PortalIcon } from "@/components/portal-icon";
 import { Button, primaryButtonClass as uiPrimaryButtonClass } from "@/components/ui";
 import { Logo } from "@/components/logo";
+import { Cubee } from "@/components/cubee";
 
 /* ------------------------------------------------------------------ */
 /* Brand                                                               */
@@ -95,9 +96,12 @@ export function AuthLayout({
             aria-hidden="true"
             className="pointer-events-none absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-teal-600/25 blur-3xl"
           />
-          <div className="relative flex items-center gap-4">
-            <Logo variant="onDark" className="h-11 w-auto" />
-            <p className="text-xs text-teal-200">Mental health support platform</p>
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Logo variant="onDark" className="h-11 w-auto" />
+              <p className="text-xs text-teal-200">Mental health support platform</p>
+            </div>
+            <Cubee size={88} />
           </div>
 
           <div className="relative">
