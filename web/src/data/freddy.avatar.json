@@ -19,7 +19,7 @@
           "depth": 37.96875000000001,
           "roundness": 1
         },
-        "position": [-82, -72, -18],
+        "position": [-82, -72, 18],
         "rotation": [0, 0, 0]
       },
       {
@@ -30,7 +30,7 @@
           "depth": 37.024609375000004,
           "roundness": 1
         },
-        "position": [82, -72, -18],
+        "position": [82, -72, 18],
         "rotation": [0, 0, 0]
       },
       {
@@ -42,7 +42,7 @@
           "roundness": 1,
           "morphRoundness": 0.366171875
         },
-        "position": [-1.021484375, -72, -18],
+        "position": [-1.021484375, -72, 18],
         "rotation": [0, 0, 0]
       }
     ]
