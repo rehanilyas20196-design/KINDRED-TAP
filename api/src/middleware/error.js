@@ -28,5 +28,7 @@ export function errorHandler(err, req, res, next) {
 
   // Carry the route so an unexpected failure can be traced without a stack.
   console.error("[error]", req.method, req.originalUrl, err);
-  return res.status(err?.status || 500).json({ error: "Something went wrong on our side" });
+  return res
+    .status(err?.status ?? err?.statusCode ?? 500)
+    .json({ error: "Something went wrong on our side" });
 }

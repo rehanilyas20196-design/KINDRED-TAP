@@ -34,19 +34,25 @@ export function createApp() {
   const app = express();
 
   app.set("trust proxy", 1);
-  app.use(express.json({ limit: "256kb" }));
-  app.use(express.urlencoded({ extended: true }));
 
+  // CORS first: a body that fails to parse must still carry the CORS headers,
+  // otherwise the browser reports an unreadable network error instead of the
+  // server's answer.
   app.use(
     cors({
       origin(origin, callback) {
         // Allow same-origin/non-browser callers such as curl and tests.
         if (!origin || env.webOrigin.includes(origin)) return callback(null, true);
-        return callback(new Error(`Origin ${origin} is not allowed`));
+        const err = new Error(`Origin ${origin} is not allowed`);
+        err.status = 403;
+        return callback(err);
       },
       credentials: true,
     })
   );
+
+  app.use(express.json({ limit: "256kb" }));
+  app.use(express.urlencoded({ extended: true }));
 
   if (env.nodeEnv !== "test") {
     app.use(morgan("dev"));
