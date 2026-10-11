@@ -15,6 +15,7 @@ import {
   PageTitle,
 } from "@/components/ui";
 import { messageFor } from "@/lib/api";
+import QrInviteCard from "@/components/qr-invite-card";
 import {
   fetchDashboard,
   formatDay,
@@ -124,7 +125,12 @@ export function ClinicHome({ user, portal }: { user: AuthUser; portal: PortalMet
     );
   }
 
-  return <ClinicBody data={data} error={error} onRetry={load} />;
+  return (
+    <>
+      <ClinicBody data={data} error={error} onRetry={load} />
+      <QrInviteCard role="collaborative_clinic" />
+    </>
+  );
 }
 
 function ClinicBody({

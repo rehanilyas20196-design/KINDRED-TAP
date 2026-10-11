@@ -31,6 +31,7 @@ import { SupervisorShell } from "@/components/supervisor/shell";
 import { ClinicHome } from "@/components/clinic/dashboard";
 import { ClinicShell } from "@/components/clinic/shell";
 import { EscalationModal } from "@/components/escalation-modal";
+import QrInviteCard from "@/components/qr-invite-card";
 import { fetchCurrentConcern } from "@/lib/clinical";
 
 /* ------------------------------------------------------------------ */
@@ -394,6 +395,8 @@ function SupporterDashboard({ portal }: { user: AuthUser; portal: PortalMeta }) 
           </div>
         </DashboardCard>
       </div>
+
+      <QrInviteCard role="supporter" />
 
       <EscalationModal
         isOpen={isEscalateOpen}

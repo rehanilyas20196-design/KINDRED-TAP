@@ -28,6 +28,7 @@ import clinicRouter from "./routes/clinic.routes.js";
 import clinicOpsRouter from "./routes/clinicOps.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import assistantRouter from "./routes/assistant.routes.js";
+import inviteRouter from "./routes/invite.routes.js";
 
 export function createApp() {
   const app = express();
@@ -89,6 +90,7 @@ export function createApp() {
   // here is reachable with a portal user's token.
   app.use("/api/admin", adminRouter);
   app.use("/api/assistant", assistantRouter);
+  app.use("/api/invites", inviteRouter);
   app.use("/api/meta", metaRouter);
 
   app.use(notFoundHandler);
