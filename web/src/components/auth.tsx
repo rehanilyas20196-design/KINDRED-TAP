@@ -13,6 +13,8 @@ import { PortalIcon } from "@/components/portal-icon";
 import { Button, primaryButtonClass as uiPrimaryButtonClass } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { Cubee } from "@/components/cubee";
+import { FieldCubee } from "@/components/field-cubee";
+import type { FieldState, FormMood } from "@/lib/cubee-form";
 
 /* ------------------------------------------------------------------ */
 /* Brand                                                               */
@@ -64,6 +66,12 @@ interface AuthLayoutProps {
   portal: PortalMeta | null;
   onSelectPortal: (key: Role) => void;
   /**
+   * The form's overall verdict, shown by Cubee in the brand panel. Optional
+   * because only the two forms that track it have one to give; without it he
+   * simply idles, which is the correct default rather than a missing value.
+   */
+  formMood?: FormMood;
+  /**
    * Set on `/login/<portal>` and `/signup/<portal>`: this page stays on its
    * own portal, so clicking a different one opens that portal's page.
    */
@@ -75,6 +83,7 @@ export function AuthLayout({
   mode,
   portal,
   onSelectPortal,
+  formMood,
   locked = false,
   children,
 }: AuthLayoutProps) {
@@ -101,7 +110,7 @@ export function AuthLayout({
               <Logo variant="onDark" className="h-11 w-auto" />
               <p className="text-xs text-teal-200">Mental health support platform</p>
             </div>
-            <Cubee size={88} />
+            <Cubee mood={formMood} size={88} />
           </div>
 
           <div className="relative">
@@ -232,6 +241,8 @@ interface FieldProps extends Omit<ComponentPropsWithoutRef<"input">, "className"
   label: string;
   error?: string;
   hint?: string;
+  /** Live validity for Cubee. The form owns the value; this only reports shape. */
+  cubee?: FieldState;
 }
 
 function FieldShell({
@@ -239,20 +250,26 @@ function FieldShell({
   label,
   error,
   hint,
+  cubee,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
   hint?: string;
+  cubee?: FieldState;
   children: ReactNode;
 }) {
   const note = error ?? hint;
   return (
     <div>
-      <label htmlFor={id} className="field-label">
-        {label}
-      </label>
+      {cubee ? (
+        <FieldCubee id={id} label={label} state={cubee} />
+      ) : (
+        <label htmlFor={id} className="field-label">
+          {label}
+        </label>
+      )}
       {children}
       {note ? (
         <p
@@ -270,11 +287,11 @@ function FieldShell({
   );
 }
 
-export function TextField({ label, error, hint, id, ...inputProps }: FieldProps) {
+export function TextField({ label, error, hint, id, cubee, ...inputProps }: FieldProps) {
   const autoId = useId();
   const fieldId = id ?? autoId;
   return (
-    <FieldShell id={fieldId} label={label} error={error} hint={hint}>
+    <FieldShell id={fieldId} label={label} error={error} hint={hint} cubee={cubee}>
       <input
         id={fieldId}
         {...inputProps}
@@ -286,13 +303,20 @@ export function TextField({ label, error, hint, id, ...inputProps }: FieldProps)
   );
 }
 
-export function PasswordField({ label, error, hint, id, ...inputProps }: FieldProps) {
+export function PasswordField({
+  label,
+  error,
+  hint,
+  id,
+  cubee,
+  ...inputProps
+}: FieldProps) {
   const autoId = useId();
   const fieldId = id ?? autoId;
   const [visible, setVisible] = useState(false);
 
   return (
-    <FieldShell id={fieldId} label={label} error={error} hint={hint}>
+    <FieldShell id={fieldId} label={label} error={error} hint={hint} cubee={cubee}>
       <div className="relative">
         <input
           id={fieldId}

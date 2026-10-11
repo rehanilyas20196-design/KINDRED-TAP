@@ -19,6 +19,8 @@ import {
   type Role,
 } from "@/lib/portals";
 import { useSessionGate } from "@/lib/session-gate";
+import { useCubeeForm } from "@/hooks/use-cubee-form";
+import { emailState, passwordState, withError } from "@/lib/cubee-form";
 import {
   AuthCard,
   AuthLayout,
@@ -46,22 +48,57 @@ export default function LoginForm({
   const [banner, setBanner] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
+  const [accepted, setAccepted] = useState<boolean | undefined>(undefined);
   const router = useRouter();
   const { state: gate, signOut } = useSessionGate(portal.key);
+
+  // Live shape, with the form's own error folded in - the rules below cannot
+  // see that the server rejected a password, and `errors` is the authoritative
+  // word on that. Submit still owns the real check; nothing here can allow one.
+  const fields = {
+    email: withError(emailState(email), errors.email),
+    password: withError(passwordState(password), errors.password),
+  };
+  const { mood } = useCubeeForm(fields, accepted);
 
   function selectPortal(key: Role) {
     const next = portalFor(key);
     if (next) setPortal(next);
+    setAccepted(undefined);
+  }
+
+  /** Any edit retires the last outcome - a reaction must never outlive its cause. */
+  function resetOutcome() {
+    if (accepted !== undefined) setAccepted(undefined);
+  }
+
+  /**
+   * Retires a field's error as soon as it is edited. Without this a password
+   * the server rejected would keep Cubee angry while it was being fixed, and
+   * the field's own live state - which says the shape is right again - would
+   * be overruled by a verdict on text that no longer exists.
+   */
+  function clearFieldError(key: string) {
+    setErrors((current) => {
+      if (!(key in current)) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setAccepted(undefined);
 
     const nextErrors: Record<string, string> = {};
     if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = "Enter a valid email address";
     if (!password) nextErrors.password = "Password is required";
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      setAccepted(false);
+      return;
+    }
 
     setPending(true);
     setBanner(null);
@@ -81,14 +118,17 @@ export default function LoginForm({
         setBanner(
           `That account belongs to the ${other?.portal ?? "platform"}. Sign in there, or create a ${portal.portal} account.`
         );
+        setAccepted(false);
         return;
       }
 
       saveSession(data.token);
+      setAccepted(true);
       setResult(data);
     } catch (error) {
       setBanner(messageFor(error));
       setErrors(toFieldErrors(error));
+      setAccepted(false);
     } finally {
       setPending(false);
     }
@@ -97,7 +137,13 @@ export default function LoginForm({
   const signedInPortal = result ? portalFor(result.user.role) : null;
 
   return (
-    <AuthLayout mode="login" portal={portal} onSelectPortal={selectPortal} locked={locked}>
+    <AuthLayout
+      mode="login"
+      portal={portal}
+      onSelectPortal={selectPortal}
+      formMood={mood}
+      locked={locked}
+    >
       {result ? (
         <SuccessPanel
           title={result.user.fullName ? `Welcome back, ${result.user.fullName}` : "Welcome back"}
@@ -155,8 +201,13 @@ export default function LoginForm({
               autoComplete="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                clearFieldError("email");
+                resetOutcome();
+              }}
               error={errors.email}
+              cubee={fields.email}
               required
             />
 
@@ -165,8 +216,13 @@ export default function LoginForm({
               autoComplete="current-password"
               placeholder="Your password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                clearFieldError("password");
+                resetOutcome();
+              }}
               error={errors.password}
+              cubee={fields.password}
               required
             />
 

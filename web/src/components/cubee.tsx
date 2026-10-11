@@ -24,8 +24,38 @@ import cubeeDefinition from "@/data/cubee.avatar.json";
  */
 const CubeeDefinition = createAvatar(cubeeDefinition);
 
-/** Conversation states the assistant maps onto. All ship in the definition. */
-export type CubeeMood = "idle" | "listening" | "thinking" | "happy" | "confused" | "sad";
+/**
+ * The states callers may drive Cubee into.
+ *
+ * Every key below is an animation the definition ships, so the component's
+ * own type stays honest without depending on how `createAvatar` happens to
+ * type an optional prop - a derivation through `Parameters` resolves to
+ * `never` for an optional prop and cascades confusing errors at call sites.
+ */
+export type CubeeMood =
+  | "idle"
+  | "listening"
+  | "thinking"
+  | "happy"
+  | "confused"
+  | "sad"
+  | "angry"
+  | "bored"
+  | "excited"
+  | "curious"
+  | "surprised"
+  | "proud"
+  | "shy"
+  | "scared"
+  | "playful"
+  | "celebrate"
+  | "suspicious"
+  | "laughing"
+  | "drowsy"
+  | "sleeping"
+  | "waking"
+  | "working"
+  | "searching";
 
 /** What Cubee does when nobody is driving him. */
 const REACTION = "excited";

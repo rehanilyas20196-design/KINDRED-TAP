@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Figtree, IBM_Plex_Mono, Geist } from "next/font/google";
 import { RevealObserver, SmoothScroll } from "@/components/motion";
+import { AssistantDock } from "@/components/assistant/assistant-dock";
 import "@bible-strong/avatar-react/styles.css";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SmoothScroll />
         <RevealObserver />
         {children}
+        <AssistantDock />
       </body>
     </html>
   );
