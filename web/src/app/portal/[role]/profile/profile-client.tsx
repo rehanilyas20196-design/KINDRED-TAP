@@ -75,6 +75,13 @@ export default function ProfileClient({ role }: { role: string }) {
   }
 
   if (savedNext) {
+    // An approval-gated portal does not open here: saving is the submission,
+    // and the API's `next` is what says whether the door opened or the form
+    // went to the admin. Telling somebody their portal "is ready" when it is
+    // with a reviewer would be the wrong news.
+    const awaitingReview = savedNext === "/verification/pending";
+    const firstName = user.fullName?.split(" ")[0] ?? "welcome";
+
     return (
       <GuardSplash label="">
         <div className="card p-8 text-center">
@@ -84,13 +91,15 @@ export default function ProfileClient({ role }: { role: string }) {
             </svg>
           </span>
           <h1 className="mt-4 text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
-            {portal.portal} is ready
+            {awaitingReview ? "Your details are with our team" : `${portal.portal} is ready`}
           </h1>
           <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-            Your profile has been saved, {user.fullName?.split(" ")[0] ?? "welcome"}.
+            {awaitingReview
+              ? `Thanks, ${firstName}. The form is submitted for verification, and your portal opens as soon as it is approved.`
+              : `Your profile has been saved, ${firstName}.`}
           </p>
           <LinkButton href={savedNext} className="mt-6 w-full">
-            Continue
+            {awaitingReview ? "See what happens next" : "Continue"}
           </LinkButton>
         </div>
       </GuardSplash>

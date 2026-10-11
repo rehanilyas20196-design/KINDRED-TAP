@@ -117,12 +117,13 @@ before(async () => {
   });
   tokens.supervisor = sup.json.token;
 
-  // Professional portal signups wait for the admin. This suite is about
-  // supervision, not the review queue, so the gate is cleared directly.
-  await query("UPDATE users SET status = 'pending_profile' WHERE id = $1", [sup.json.user.id]);
-
   const savedProfile = await call("PUT", "/api/profiles/clinical_supervisor", supervisorProfile, tokens.supervisor);
   assert.equal(savedProfile.status, 200);
+
+  // Saving the form is what sends a professional account to the admin. This
+  // suite is about supervision, not the review queue, so the gate is cleared
+  // directly once the profile is on file.
+  await query("UPDATE users SET status = 'active' WHERE id = $1", [sup.json.user.id]);
 
   // A therapist and a client, both signed up but not required to be active:
   // requireAuth only blocks suspended accounts and accounts the admin has not

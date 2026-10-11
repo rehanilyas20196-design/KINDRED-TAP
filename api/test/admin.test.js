@@ -5,9 +5,10 @@
  * data directory redirected to `.pglite-admin-test` so the suite never touches
  * the development database the dev server holds open.
  *
- * The suite proves the three things that matter for the gate: a portal token
- * can never reach /api/admin, an unverified professional account can never
- * reach a portal route, and the admin's decision is what opens the door.
+ * The suite proves the four things that matter for the gate: a portal token
+ * can never reach /api/admin, an account only reaches the queue once its form
+ * is submitted, an unverified professional account can never reach a portal
+ * route, and the admin's decision is what opens the dashboard.
  */
 
 import test, { before, after } from "node:test";
@@ -113,28 +114,77 @@ test("an admin token cannot reach a portal route", async () => {
   assert.equal(me.status, 401);
 });
 
-test("a professional signup waits for the admin", async () => {
+test("a professional signup opens the form, not the portal", async () => {
   const signup = await call("POST", "/api/auth/signup", { body: ADVISOR });
   assert.equal(signup.status, 201);
-  assert.equal(signup.json.user.status, "pending_review");
-  assert.equal(signup.json.next, "/verification/pending");
+  assert.equal(signup.json.user.status, "pending_profile");
+  assert.equal(signup.json.next, "/portal/clinical_advisor/profile");
 
-  // "Who am I" answers, so the waiting screen has something to show.
+  // "Who am I" answers, so the form has something to greet them with.
   const me = await call("GET", "/api/me", { token: signup.json.token });
   assert.equal(me.status, 200);
-  assert.equal(me.json.user.status, "pending_review");
-  assert.equal(me.json.next, "/verification/pending");
+  assert.equal(me.json.user.status, "pending_profile");
+  assert.equal(me.json.next, "/portal/clinical_advisor/profile");
 
-  // Everything else stays shut.
+  // The queue holds submitted forms, so an untouched signup is not in it
+  // yet - there is nothing for a reviewer to look at.
+  const token = await adminToken();
+  const early = await call("GET", "/api/admin/users?status=pending_review", { token });
+  assert.equal(early.status, 200);
+  assert.equal(
+    early.json.users.some((entry) => entry.email === ADVISOR.email),
+    false,
+    "an unfilled signup must not be waiting for verification"
+  );
+
+  // The form itself is reachable: nothing may block the step that produces
+  // the information the admin is meant to review.
   const profile = await call("PUT", "/api/profiles/clinical_advisor", {
     body: {},
     token: signup.json.token,
   });
-  assert.equal(profile.status, 403);
-  assert.equal(profile.json.code, "verification_required");
+  assert.notEqual(profile.status, 403);
+});
 
-  const sessions = await call("GET", "/api/sessions", { token: signup.json.token });
+test("filling the form hands the admin the account and the details on it", async () => {
+  const login = await call("POST", "/api/auth/login", {
+    body: { email: ADVISOR.email, password: ADVISOR.password, portal: ADVISOR.role },
+  });
+  assert.equal(login.status, 200);
+  assert.equal(login.json.next, "/portal/clinical_advisor/profile");
+
+  const saved = await call("PUT", "/api/profiles/clinical_advisor", {
+    token: login.json.token,
+    body: {
+      termsAccepted: true,
+      discipline: "Clinical psychology",
+      maxSupervisees: 6,
+      consentedToPractice: true,
+    },
+  });
+  assert.equal(saved.status, 200, `profile save returned ${saved.status}: ${JSON.stringify(saved.json)}`);
+  assert.equal(saved.json.user.status, "pending_review");
+  assert.equal(saved.json.next, "/verification/pending");
+
+  // Saving is the submission: the portal closes behind them...
+  const me = await call("GET", "/api/me", { token: login.json.token });
+  assert.equal(me.json.user.status, "pending_review");
+  assert.equal(me.json.next, "/verification/pending");
+
+  const sessions = await call("GET", "/api/sessions", { token: login.json.token });
   assert.equal(sessions.status, 403);
+  assert.equal(sessions.json.code, "verification_required");
+
+  // ...and everything on the form lands on the admin's desk with it.
+  const token = await adminToken();
+  const list = await call("GET", "/api/admin/users?status=pending_review", { token });
+  assert.equal(list.status, 200);
+  const row = list.json.users.find((entry) => entry.email === ADVISOR.email);
+  assert.ok(row, "the submitted form should be in the verification queue");
+
+  const detail = await call("GET", `/api/admin/users/${row.id}`, { token });
+  assert.equal(detail.status, 200);
+  assert.equal(detail.json.profile.discipline, "Clinical psychology");
 });
 
 test("the admin sees the request and can reject it with a note", async () => {
@@ -175,7 +225,7 @@ test("a rejected account can sign in and read the reason, but not use the portal
   assert.equal(sessions.json.code, "account_rejected");
 });
 
-test("approving opens the door without skipping the profile step", async () => {
+test("approving a submitted form opens the dashboard", async () => {
   const token = await adminToken();
 
   const list = await call("GET", "/api/admin/users?q=" + encodeURIComponent(ADVISOR.email), {
@@ -186,20 +236,19 @@ test("approving opens the door without skipping the profile step", async () => {
 
   const approved = await call("POST", `/api/admin/users/${row.id}/approve`, { token });
   assert.equal(approved.status, 200);
-  assert.equal(approved.json.user.status, "pending_profile");
+  // The form was already on file when it reached the queue, so approval is
+  // the door opening rather than a request for more information.
+  assert.equal(approved.json.user.status, "active");
   assert.equal(approved.json.user.reviewNote, null);
 
   const login = await call("POST", "/api/auth/login", {
     body: { email: ADVISOR.email, password: ADVISOR.password, portal: ADVISOR.role },
   });
-  assert.equal(login.json.next, "/portal/clinical_advisor/profile");
+  assert.equal(login.json.next, "/portal/clinical_advisor");
 
-  // The gate is open: a route that used to answer 403 now validates instead.
-  const profile = await call("PUT", "/api/profiles/clinical_advisor", {
-    body: {},
-    token: login.json.token,
-  });
-  assert.notEqual(profile.status, 403);
+  const me = await call("GET", "/api/me", { token: login.json.token });
+  assert.equal(me.json.user.status, "active");
+  assert.equal(me.json.next, "/portal/clinical_advisor");
 });
 
 test("a public signup is not held for verification", async () => {

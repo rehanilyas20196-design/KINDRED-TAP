@@ -87,11 +87,6 @@ async function createClinic(label, organizationName) {
   });
   assert.equal(signup.status, 201, `signup for ${label} returned ${signup.status}`);
 
-  // Professional portal signups land in the admin's verification queue and
-  // cannot use the portal until they are approved. These suites are about
-  // clinic behaviour, not the review queue, so the gate is cleared directly.
-  await query("UPDATE users SET status = 'pending_profile' WHERE id = $1", [signup.json.user.id]);
-
   const saved = await call(
     "PUT",
     "/api/profiles/collaborative_clinic",
@@ -99,6 +94,11 @@ async function createClinic(label, organizationName) {
     signup.json.token
   );
   assert.equal(saved.status, 200, `profile for ${label} returned ${saved.status}`);
+
+  // Saving the form is what sends a professional account to the admin. These
+  // suites are about clinic behaviour, not the review queue, so the gate is
+  // cleared directly once the profile is on file.
+  await query("UPDATE users SET status = 'active' WHERE id = $1", [signup.json.user.id]);
 
   return { token: signup.json.token, userId: signup.json.user.id, email };
 }

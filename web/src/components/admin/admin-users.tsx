@@ -166,9 +166,14 @@ export function AdminUsers({
         `/api/admin/users/${selectedId}/${kind}`,
         { method: "POST", body: kind === "reject" ? { note: note.trim() || undefined } : {} }
       );
+      // Approving normally happens after the form, so the account is open
+      // straight away; a record that somehow has no profile yet still has to
+      // finish it, and the message has to say so rather than promise access.
       setFlash(
         kind === "approve"
-          ? `${result.user.fullName ?? result.user.email} approved. They can finish their portal profile now.`
+          ? result.user.status === "active"
+            ? `${result.user.fullName ?? result.user.email} approved. Their portal is open.`
+            : `${result.user.fullName ?? result.user.email} approved. They can finish their portal profile now.`
           : `${result.user.fullName ?? result.user.email} rejected. They will see your note when they sign in.`
       );
       setSelectedId(null);

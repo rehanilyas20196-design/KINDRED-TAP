@@ -3,7 +3,7 @@ import { query, transaction } from "../db/index.js";
 import { asyncHandler, badRequest, parse } from "../middleware/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
 import { profileSchemas, toColumns } from "../lib/schemas.js";
-import { ROLE_LABELS, ROLE_TABLES } from "../lib/roles.js";
+import { ROLE_LABELS, ROLE_REQUIRES_ADMIN_APPROVAL, ROLE_TABLES } from "../lib/roles.js";
 import { loadRoleProfile, nextStepFor, publicUser } from "../lib/users.js";
 import { grantDefaultPermissions } from "../lib/permissions.js";
 import {
@@ -25,8 +25,13 @@ profileRouter.use(requireAuth);
  * Saves the details unique to a portal. One route, six schemas, chosen by the
  * role captured at signup.
  *
- * No personality-test guard here on purpose. The profile is what promotes an
- * account to `active`, so guarding it behind the test strands anyone who took
+ * This is also the gate: the save either opens the portal (`active`) or hands
+ * the filled-in form to the admin (`pending_review`), never both at once. The
+ * `next` in the response says which happened, so the web app never re-derives
+ * it.
+ *
+ * No personality-test guard here on purpose. The profile is what decides an
+ * account's standing, so guarding it behind the test strands anyone who took
  * the test before filling in their profile: the test can never be undone, so
  * they would be locked out permanently. The test stays optional context.
  */
@@ -51,15 +56,25 @@ profileRouter.put(
     const data = parse(schema, req.body);
     const { columns, values } = toColumns(role, data);
 
+    // The admin reviews a filled-in form, not an empty record, so a portal
+    // that needs verification only enters the queue on this save - which is
+    // the first moment there is anything to review. An account that is
+    // already active is somebody editing their own profile, and editing
+    // never demotes them back into the queue.
+    const nextStatus =
+      req.user.status === "pending_profile" && ROLE_REQUIRES_ADMIN_APPROVAL[role]
+        ? "pending_review"
+        : "active";
+
     await transaction(async (tx) => {
       await tx.query(
         `UPDATE users
             SET role = $2,
-                status = 'active',
+                status = $3,
                 onboarded_at = COALESCE(onboarded_at, now()),
                 updated_at = now()
           WHERE id = $1`,
-        [req.user.id, role]
+        [req.user.id, role, nextStatus]
       );
 
       const placeholders = columns.map((_, i) => `$${i + 2}`).join(", ");

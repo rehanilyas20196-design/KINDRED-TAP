@@ -13,7 +13,8 @@ import {
 } from "../middleware/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
 import { hashToken, newSessionToken, signToken } from "../lib/tokens.js";
-import { findUserByEmail, publicUser } from "../lib/users.js";
+import { ROLE_REQUIRES_ADMIN_APPROVAL } from "../lib/roles.js";
+import { findUserByEmail, nextStepFor, publicUser } from "../lib/users.js";
 import { notify } from "../lib/notifications.js";
 
 /**
@@ -26,6 +27,11 @@ import { notify } from "../lib/notifications.js";
  * owner's account. Only the owner's Accept can turn the scan into a session;
  * Declining ends the attempt with "authentication failed" on the joiner's
  * screen.
+ *
+ * Acceptance is not access. It creates the account at the profile step, so
+ * the joiner has to fill in the same form as any other signup, and a portal
+ * the admin verifies only enters the verification queue once that form is
+ * saved. A printed QR can therefore never be a shortcut into the dashboard.
  */
 export const inviteRouter = Router();
 
@@ -209,9 +215,10 @@ scanner.post(
       ok: true,
       token,
       user: account,
-      // The owner's acceptance is the join: the scanner goes straight to
-      // their portal's profile page to add their information.
-      next: `/portal/${account.role}/profile`,
+      // The owner's acceptance is the join: it opens the portal's own form,
+      // never its dashboard - `nextStepFor` sends a brand-new account to the
+      // profile step and an already-active one back to its home.
+      next: nextStepFor(account),
     });
   })
 );
@@ -334,12 +341,15 @@ owner.post(
     const email = invite.joinerEmail;
 
     // An existing account keeps its role: a scan must never change what
-    // somebody's account is. A newcomer is created straight in this portal.
+    // somebody's account is, and never what its status is either. A newcomer
+    // is created straight in this portal at the profile step, exactly like an
+    // ordinary signup - accepting a QR hands over the form, not the dashboard.
     let account = await findUserByEmail(email);
+    let created = false;
     if (!account) {
       const { rows } = await query(
         `INSERT INTO users (email, password_hash, full_name, role, status)
-         VALUES ($1, $2, $3, $4, 'active')
+         VALUES ($1, $2, $3, $4, 'pending_profile')
          RETURNING id`,
         [
           email,
@@ -351,6 +361,7 @@ owner.post(
         ]
       );
       account = { id: rows[0].id };
+      created = true;
     }
 
     await query(
@@ -368,7 +379,13 @@ owner.post(
       userId: req.user.id,
       type: "session_updated",
       title: "QR invite accepted",
-      body: `${email} was approved and can now use ${invite.role === "supporter" ? "the Supporter Portal" : "the Collaborative Clinic Portal"}.`,
+      body: created
+        ? `${email} can now finish setting up their ${
+            invite.role === "supporter" ? "Supporter" : "Collaborative Clinic"
+          } account. They get the form, not the dashboard - and ${
+            ROLE_REQUIRES_ADMIN_APPROVAL[invite.role] ? "it waits for an admin once it is filled in" : "they are in once it is saved"
+          }.`
+        : `${email} was approved and can sign in to ${invite.role === "supporter" ? "the Supporter Portal" : "the Collaborative Clinic Portal"}.`,
       key: `invite-approved-${invite.id}`,
     });
 

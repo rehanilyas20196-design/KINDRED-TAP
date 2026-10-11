@@ -14,7 +14,6 @@ import { loginSchema, signupSchema } from "../lib/schemas.js";
 import {
   ETHICS_VERSION,
   ROLE_PORTAL_NAMES,
-  ROLE_REQUIRES_ADMIN_APPROVAL,
   ROLE_REQUIRES_ETHICS,
 } from "../lib/roles.js";
 import { findUserByEmail, loadRoleProfile, nextStepFor, publicUser } from "../lib/users.js";
@@ -58,10 +57,11 @@ authRouter.post(
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const needsEthics = ROLE_REQUIRES_ETHICS[role];
     const ethicsAgreed = needsEthics && ethicsAccepted === true;
-    // The three professional portals hold clinical responsibility, so their
-    // signups land in the admin's verification queue. The public and peer
-    // portals go straight to the profile step as before.
-    const status = ROLE_REQUIRES_ADMIN_APPROVAL[role] ? "pending_review" : "pending_profile";
+    // Signup opens the form, never the portal. Everyone starts at the profile
+    // step so the account has something on it; the three professional portals
+    // are handed to the admin for verification by the profile route, once the
+    // form that they are meant to review has actually been filled in.
+    const status = "pending_profile";
 
     // Signup sets the portal straight away, so each person lands in the right
     // portal instead of choosing later.
