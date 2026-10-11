@@ -56,6 +56,63 @@ export interface AdminUserDetail {
   profile: Record<string, unknown> | null;
 }
 
+/* ------------------------------------------------------------------ */
+/* Ask Cube knowledge base                                             */
+/* ------------------------------------------------------------------ */
+
+export interface AdminKbDocument {
+  id: string;
+  source: string;
+  title: string;
+  kind: string;
+  /** Shipped by the sync (site copy, datasets) rather than added by hand. */
+  managed: boolean;
+  chunkCount: number;
+  embeddedChunks: number;
+  indexedAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface AdminKbSyncRun {
+  status: string;
+  documentsSeen: number;
+  documentsIndexed: number;
+  documentsRemoved: number;
+  error: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
+export interface AdminKbStats {
+  configured: boolean;
+  documents: number;
+  chunks: number;
+  /** Similarity floor a document must clear to be cited. */
+  minScore: number;
+  /** Share of the question's words a document must contain to be cited. */
+  keywordMin: number;
+  byKind: Record<string, number> | null;
+  lastSync: AdminKbSyncRun | null;
+}
+
+export interface AdminKbDocumentList {
+  documents: AdminKbDocument[];
+  stats: AdminKbStats;
+}
+
+export interface AdminKbIndexResult {
+  results: { source: string; title: string; status: string; chunks: number }[];
+  stats: AdminKbStats;
+  sync?: {
+    documents: number;
+    indexed: number;
+    removed: number;
+    warnings: string[];
+    failed: string[];
+    durationMs: number;
+  };
+}
+
 export function saveAdminSession(token: string): void {
   try {
     localStorage.setItem(ADMIN_SESSION_KEY, token);

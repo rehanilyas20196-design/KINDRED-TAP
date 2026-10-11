@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AdminLogin } from "@/components/admin/admin-login";
+import { AdminKnowledge } from "@/components/admin/admin-knowledge";
 import { AdminUsers } from "@/components/admin/admin-users";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
 import { Logo } from "@/components/logo";
@@ -232,6 +233,8 @@ export function AdminPanel() {
           }}
           onSessionLost={signOut}
         />
+
+        <AdminKnowledge onSessionLost={signOut} />
       </main>
     </div>
   );

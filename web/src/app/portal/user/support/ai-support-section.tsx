@@ -34,7 +34,7 @@ export function AiSupportSection({
   concernLabel: string | null;
   therapistName: string | null;
 }) {
-  const { lines, mood, busy, send, typing } = useAssistantChat({
+  const { lines, mood, busy, send, typing, reset } = useAssistantChat({
     context: { concernLabel, therapistName },
     unreachable:
       "I could not reach the server just now, so that question went unanswered. Try again in a moment, or raise a support request below and a person will pick it up.",
@@ -59,7 +59,7 @@ export function AiSupportSection({
     <SupportSection
       id="ai"
       icon={<Icon name="assistant" className="h-5 w-5" />}
-      title="AI support assistant"
+      title="Ask Cube"
       intro="Guidance and wording between sessions - not a replacement for a therapist."
     >
       <div className="space-y-4">
@@ -68,7 +68,7 @@ export function AiSupportSection({
         <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
           <Cubee mood={mood} size={84} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-900 dark:text-white">Cubee</p>
+            <p className="text-xs font-semibold text-slate-900 dark:text-white">Ask Cube</p>
             <p
               role="status"
               aria-live="polite"
@@ -76,23 +76,33 @@ export function AiSupportSection({
             >
               {MOOD_LABEL[mood]}
             </p>
-            <p className="mt-1.5 text-[11px] leading-4 text-slate-500 dark:text-slate-500">
-              How you feel stays in this browser. Questions about the app are answered from our
-              documentation.
-            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-[11px] leading-4 text-slate-500 dark:text-slate-500">
+                How you feel stays in this browser. Ask Cube reads our documentation for anything
+                else.
+              </p>
+              <button
+                type="button"
+                onClick={() => reset()}
+                disabled={lines.length <= 1}
+                className="text-[11px] font-semibold leading-4 text-teal-700 hover:underline disabled:opacity-40 disabled:no-underline dark:text-teal-300"
+              >
+                New conversation
+              </button>
+            </div>
           </div>
         </div>
 
         <div
           role="log"
-          aria-label="Conversation with the AI support assistant"
+          aria-label="Conversation with Ask Cube"
           className="h-72 space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white/60 p-4 dark:border-slate-800 dark:bg-slate-900/40"
         >
           {lines.map((line, index) => (
             <ChatBubble
               key={`${line.role}-${index}`}
               line={line}
-              assistantName="AI assistant"
+              assistantName="Ask Cube"
             />
           ))}
         </div>
@@ -118,7 +128,7 @@ export function AiSupportSection({
             onChange={handleInput}
             disabled={busy}
             placeholder="Write how you feel, or ask what the app can do..."
-            aria-label="Message the AI support assistant"
+            aria-label="Message Ask Cube"
             className={`${inputClass} min-w-0 flex-1`}
           />
           <Button type="submit" disabled={busy || !input.trim()}>

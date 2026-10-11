@@ -483,4 +483,23 @@ export const therapistSpecialtiesSchema = z.object({
  */
 export const assistantAskSchema = z.object({
   question: requiredText(2, 1000, "Your question"),
+  /**
+   * The conversation this turn belongs to. Omit it to start a new one, or to
+   * fall back to `history` when the client is holding the transcript itself.
+   */
+  conversationId: z.string().trim().min(1).max(64).optional(),
+  newConversation: z.boolean().optional(),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().trim().max(600),
+      })
+    )
+    .max(20)
+    .optional(),
+});
+
+export const assistantConversationIdSchema = z.object({
+  id: z.string().trim().min(1).max(64),
 });

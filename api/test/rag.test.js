@@ -12,6 +12,9 @@
 
 import test, { before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 process.env.PGLITE_DIR = process.env.PGLITE_DIR || ".pglite-rag-test";
 // Read by api/src/env.js when it is imported inside `before`. Blank means
@@ -265,7 +268,37 @@ test("a question the corpus can answer is answered and cited", async () => {
   }
 });
 
-test("a question the corpus cannot answer is refused without calling the model", async () => {
+test("an ordinary question the documentation says nothing about is answered without searching", async () => {
+  const generateCalls = [];
+  const rag = ragModule.createRag({
+    autoSeed: false,
+    embed: async (text) => fakeEmbed(text),
+    embedBatch: async (texts) => texts.map(fakeEmbed),
+    generate: async (options) => {
+      generateCalls.push(options);
+      return "About 24 metres if it keeps flapping its wings.";
+    },
+  });
+
+  await rag.indexDocument(MATCHING_DOC);
+
+  try {
+    const result = await rag.answer("What is the airspeed velocity of an unladen swallow?");
+
+    assert.equal(result.kind, "conversation");
+    assert.equal(generateCalls.length, 1, "a conversational answer needs exactly one model call");
+    assert.ok(
+      !generateCalls[0].prompt.includes("<context"),
+      "an unrelated question must not drag the knowledge base into the prompt"
+    );
+    assert.deepEqual(result.citations, [], "nothing was cited, so nothing is claimed to be");
+    assert.ok(result.answer.includes("24 metres"));
+  } finally {
+    await rag.removeDocument(MATCHING_DOC.source);
+  }
+});
+
+test("a product question the corpus cannot answer is refused without calling the model", async () => {
   const generateCalls = [];
   const rag = ragModule.createRag({
     autoSeed: false,
@@ -280,12 +313,13 @@ test("a question the corpus cannot answer is refused without calling the model",
   await rag.indexDocument(MATCHING_DOC);
 
   try {
-    const result = await rag.answer("What is the airspeed velocity of an unladen swallow?");
+    const result = await rag.answer("How do I export my subscription invoice from the billing page?");
 
+    assert.equal(result.kind, "refused");
     assert.equal(result.insufficient, true);
     assert.equal(result.answer, ragModule.REFUSAL_MESSAGE);
     assert.deepEqual(result.citations, []);
-    assert.equal(generateCalls.length, 0, "an unmatched question must not reach the model");
+    assert.equal(generateCalls.length, 0, "an unmatched product question must not reach the model");
   } finally {
     await rag.removeDocument(MATCHING_DOC.source);
   }
@@ -479,4 +513,315 @@ test("an admin can read the knowledge base and gets a clear refusal when it cann
 
   const missing = await call("DELETE", "/api/admin/kb/documents/knowledge:nope.md", { token });
   assert.equal(missing.status, 404);
+});
+
+
+/* ------------------------------------------------------------------ *
+ * Routing
+ * ------------------------------------------------------------------ */
+
+test("a product question goes to the knowledge base and a pleasantry does not", () => {
+  assert.equal(ragModule.routeMessage("How do I cancel a session?").kind, "platform");
+  assert.equal(ragModule.routeMessage("Where is my therapist profile?").kind, "platform");
+  assert.equal(ragModule.routeMessage("hello").kind, "conversation");
+  assert.equal(ragModule.routeMessage("what is the capital of France").kind, "conversation");
+  assert.equal(ragModule.routeMessage("").kind, "conversation");
+});
+
+test("a follow-up resolves against the previous turn even without a product term", () => {
+  const history = [{ role: "assistant", content: "Sessions are cancelled from your dashboard." }];
+
+  const route = ragModule.routeMessage("Explain that in simpler words", history);
+  assert.equal(route.kind, "platform");
+  assert.equal(route.reason, "follow-up");
+
+  // Without a conversation there is no "that" to resolve, so it is just a
+  // sentence, and the model answers it on its own.
+  assert.equal(ragModule.routeMessage("Explain that in simpler words").kind, "conversation");
+});
+
+/* ------------------------------------------------------------------ *
+ * Hybrid retrieval
+ * ------------------------------------------------------------------ */
+
+test("an exact term the embedding cannot place still retrieves", async () => {
+  const rag = ragModule.createRag({
+    autoSeed: false,
+    embed: async (text) => fakeEmbed(text),
+    embedBatch: async (texts) => texts.map(fakeEmbed),
+    generate: async () => "unused",
+  });
+
+  await rag.indexDocument({
+    source: "test:zoo",
+    title: "Zoo guide",
+    content:
+      "# Zoo guide\n\nThe purple elephant never forgets a visitor. Your account is safe with the elephant, and the plum butter sandwich is sold at the gate.",
+  });
+
+  try {
+    // The question shares no vocabulary with the fake embedder's list, so its
+    // cosine similarity to this chunk is exactly 0 - below any bar. Only the
+    // lexical half can find it, which is the whole point of having two of them.
+    const withWords = await rag.retrieve("the purple elephant", { minScore: 0.99 });
+    assert.equal(withWords.length, 1, "an exact phrase match must survive a bar no vector can clear");
+
+    const withoutWords = await rag.retrieve("the purple elephant", { minScore: 0.99, keywordMin: 1.1 });
+    assert.deepEqual(withoutWords, [], "taking the lexical gate away must take the hit with it");
+  } finally {
+    await rag.removeDocument("test:zoo");
+  }
+});
+
+test("overlapping results are collapsed before they reach the prompt", async () => {
+  const rag = ragModule.createRag({
+    autoSeed: false,
+    embed: async (text) => fakeEmbed(text),
+    embedBatch: async (texts) => texts.map(fakeEmbed),
+    generate: async () => "unused",
+  });
+
+  const body =
+    "Therapist matching reads your profile and your current concern, then ranks therapists by how similar the two are.";
+  await rag.indexDocument({ source: "test:dupe-a", title: "A", content: `# A\n\n${body}` });
+  await rag.indexDocument({ source: "test:dupe-b", title: "B", content: `# B\n\n${body}` });
+
+  try {
+    const hits = await rag.retrieve("therapist matching profile", { minScore: 0.01, limit: 4 });
+    assert.equal(hits.length, 1, "the same sentence from two sources is one piece of evidence");
+  } finally {
+    await rag.removeDocument("test:dupe-a");
+    await rag.removeDocument("test:dupe-b");
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * Conversation memory
+ * ------------------------------------------------------------------ */
+
+test("earlier turns are quoted into the prompt so a follow-up has a referent", async () => {
+  const generateCalls = [];
+  const rag = ragModule.createRag({
+    autoSeed: false,
+    embed: async (text) => fakeEmbed(text),
+    embedBatch: async (texts) => texts.map(fakeEmbed),
+    generate: async (options) => {
+      generateCalls.push(options);
+      return "Of course.";
+    },
+  });
+
+  await rag.indexDocument(MATCHING_DOC);
+
+  try {
+    await rag.answer("How does therapist matching work?", {
+      minScore: 0.5,
+      history: [
+        { role: "user", content: "I want to understand matching" },
+        { role: "assistant", content: "Matching ranks therapists by similarity." },
+      ],
+    });
+
+    const prompt = generateCalls[0].prompt;
+    assert.ok(prompt.includes("CONVERSATION SO FAR"), "the transcript is labelled");
+    assert.ok(prompt.includes("I want to understand matching"));
+    assert.ok(prompt.includes("Ask Cube: Matching ranks therapists by similarity."));
+    assert.ok(prompt.indexOf("CONVERSATION SO FAR") < prompt.indexOf("CONTEXT:"),
+      "what was said comes before what was retrieved");
+  } finally {
+    await rag.removeDocument(MATCHING_DOC.source);
+  }
+});
+
+test("a transcript from somebody else cannot be replayed by naming their conversation", async () => {
+  const token = await seekerToken();
+  const other = await seekerToken();
+
+  const first = await call("POST", "/api/assistant/ask", {
+    body: { question: "How do I cancel a session with my therapist?" },
+    token,
+  });
+  assert.equal(first.status, 200);
+  assert.ok(first.json.conversationId, "the first turn creates a conversation");
+
+  const denied = await call("GET", `/api/assistant/conversations/${first.json.conversationId}`, {
+    token: other,
+  });
+  assert.equal(denied.status, 404, "another account must not even be able to confirm it exists");
+
+  const mine = await call("GET", `/api/assistant/conversations/${first.json.conversationId}`, {
+    token,
+  });
+  assert.equal(mine.status, 200);
+  assert.equal(mine.json.conversation.messages.length, 2);
+
+  const listed = await call("GET", "/api/assistant/conversations", { token: other });
+  assert.equal(listed.status, 200);
+  assert.equal(
+    listed.json.conversations.some((c) => c.id === first.json.conversationId),
+    false
+  );
+
+  const wipe = await call("DELETE", "/api/assistant/conversations", { token: other });
+  assert.equal(wipe.status, 200);
+  assert.equal(wipe.json.removed, 0, "deleting your own history must not touch anyone else's");
+
+  const stillMine = await call("GET", `/api/assistant/conversations/${first.json.conversationId}`, {
+    token,
+  });
+  assert.equal(stillMine.status, 200);
+});
+
+/* ------------------------------------------------------------------ *
+ * Knowledge sources
+ * ------------------------------------------------------------------ */
+
+async function makeWebFixture() {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "kt-web-"));
+  await fs.mkdir(path.join(root, "src", "lib"), { recursive: true });
+  await fs.mkdir(path.join(root, "src", "app"), { recursive: true });
+
+  await fs.writeFile(
+    path.join(root, "src", "lib", "portals.ts"),
+    `export const PORTALS: PortalMeta[] = [
+  {
+    key: "user",
+    label: "User",
+    portal: "User Portal",
+    tagline: "Find the right support",
+    description: "Complete a brief assessment and we will match you with a trained supporter.",
+    journey: ["Assessment", "Describe your feelings"],
+    requiresEthics: false,
+  },
+  {
+    key: "therapist",
+    label: "Therapist",
+    portal: "Therapist Portal",
+    tagline: "Deliver professional therapy",
+    description: "Take AI-matched cases, deliver therapy and escalate concerns.",
+    journey: ["Receive AI-matched cases"],
+    requiresEthics: true,
+  },
+];`
+  );
+
+  await fs.writeFile(
+    path.join(root, "src", "app", "page.tsx"),
+    `const TRUST = ["Six dedicated portals", "Nothing shared without consent"];
+const STEPS = [
+  { title: "Assessment", body: "A short, plain-language check-in about how you have been feeling." },
+];
+export default function Home() {
+  return <main className="flex items-center gap-3 px-4 pt-12">Landing page copy that a visitor reads.</main>;
+}`
+  );
+
+  await fs.mkdir(path.join(root, "src", "app", "login"), { recursive: true });
+  await fs.writeFile(path.join(root, "src", "app", "login", "page.tsx"), "export default function Login() {}");
+
+  return root;
+}
+
+test("portal metadata, landing copy and the route list are read out of the web workspace", async () => {
+  const knowledgeSources = await import("../src/services/knowledge-sources.js");
+  const root = await makeWebFixture();
+
+  try {
+    const { docs, failed } = await knowledgeSources.collectWebsiteSources(root);
+    assert.deepEqual(failed, []);
+
+    const portals = docs.find((doc) => doc.source === "website:portals");
+    assert.ok(portals, "portals are a source");
+    assert.ok(portals.content.includes("User Portal"));
+    assert.ok(portals.content.includes("Assessment"));
+    assert.ok(portals.content.includes("versioned ethical agreement"), "the ethics flag is reported");
+
+    const landing = docs.find((doc) => doc.source === "website:landing");
+    assert.ok(landing, "the landing page is a source");
+    assert.ok(landing.content.includes("Six dedicated portals"));
+    assert.ok(landing.content.includes("A short, plain-language check-in"));
+    assert.ok(!landing.content.includes("items-center"), "class lists are not copy");
+
+    const routes = docs.find((doc) => doc.source === "website:routes");
+    assert.ok(routes, "the route inventory is a source");
+    assert.ok(routes.content.includes("| Login | \`/login\` |"));
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test("a Tailwind class list is not mistaken for copy", async () => {
+  const knowledgeSources = await import("../src/services/knowledge-sources.js");
+
+  assert.equal(knowledgeSources.looksLikeProse("flex items-center gap-3 rounded-lg px-4"), false);
+  assert.equal(
+    knowledgeSources.looksLikeProse("max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl"),
+    false
+  );
+  assert.equal(
+    knowledgeSources.looksLikeProse(
+      "Complete a brief assessment, describe what you are dealing with, and we will match you."
+    ),
+    true
+  );
+});
+
+/* ------------------------------------------------------------------ *
+ * Synchronisation
+ * ------------------------------------------------------------------ */
+
+test("sync retires documents whose source disappeared and leaves an admin's own alone", async () => {
+  const knowledgeSources = await import("../src/services/knowledge-sources.js");
+  const rag = ragModule.createRag({
+    autoSeed: false,
+    embed: async (text) => fakeEmbed(text),
+    embedBatch: async (texts) => texts.map(fakeEmbed),
+    generate: async () => "unused",
+  });
+
+  const knowledgeDir = await fs.mkdtemp(path.join(os.tmpdir(), "kt-kb-"));
+  await fs.writeFile(
+    path.join(knowledgeDir, "only.md"),
+    "# Only\n\nThis fixture file is the whole curated corpus for this test."
+  );
+
+  // One document sync owns, and one an admin typed in by hand.
+  await rag.indexDocument({
+    source: "dataset:ghost",
+    title: "Ghost",
+    kind: "dataset",
+    content: "# Ghost\n\nA source that this run will not produce.",
+    managed: true,
+  });
+  await rag.indexDocument({
+    source: "custom:hand",
+    title: "Hand",
+    content: "# Hand\n\nWritten by an admin, so sync must never retire it.",
+    managed: false,
+  });
+
+  try {
+    const sync = await rag.syncAll({
+      knowledgeDir,
+      webDir: path.join(knowledgeDir, "no-web-workspace"),
+      includeDatasets: false,
+    });
+
+    const sources = (await rag.listDocuments()).map((doc) => doc.source);
+
+    assert.ok(sources.includes("knowledge:only.md"), "the curated file is indexed");
+    assert.ok(!sources.includes("dataset:ghost"), "a managed source that vanished is retired");
+    assert.ok(sources.includes("custom:hand"), "an admin's document survives");
+    assert.equal(sync.removed, 1);
+
+    const stats = await rag.stats();
+    assert.ok(stats.lastSync, "the run is recorded");
+    assert.equal(stats.lastSync.status, "ok");
+    assert.equal(stats.lastSync.documentsRemoved, 1);
+  } finally {
+    for (const source of ["knowledge:only.md", "dataset:ghost", "custom:hand", "website:portals", "website:landing", "website:routes"]) {
+      await rag.removeDocument(source);
+    }
+    await fs.rm(knowledgeDir, { recursive: true, force: true });
+  }
 });

@@ -4,8 +4,10 @@ import { useCallback, useState } from "react";
 import { AI_SUGGESTIONS, aiReply, type AiContext, type AiReply } from "@/lib/ai-support";
 import {
   askPlatformAssistant,
-  isPlatformQuestion,
+  staysInBrowser,
   type AssistantCitation,
+  type AssistantKind,
+  type AssistantTurn,
 } from "@/lib/assistant";
 
 /**
@@ -24,8 +26,14 @@ import {
  * ticket form where the widget instead points back at this file's other home.
  */
 
-/** Where a reply came from. Shown on every answer, never hidden. */
-export type ReplySource = "browser" | "documentation";
+/**
+ * Where a reply came from. Shown on every answer, never hidden.
+ *
+ * Three states rather than two, because "the server said it" is not one
+ * answer: a cited passage and a plain conversation are different claims and
+ * the badge has to be able to say which one was made.
+ */
+export type ReplySource = "browser" | "documentation" | "conversation";
 
 /**
  * The six states the assistant drives, with the words shown under Cubee.
@@ -43,12 +51,14 @@ export interface ChatLine {
   actions?: AiReply["actions"];
   citations?: AssistantCitation[];
   source?: ReplySource;
+  /** The server's own classification, kept so the mood can follow it. */
+  answerKind?: AssistantKind;
 }
 
 export const MOOD_LABEL: Record<AssistantMood, string> = {
   idle: "Ready when you are",
   listening: "Listening",
-  thinking: "Looking that up in our documentation",
+  thinking: "Thinking about that",
   happy: "Happy to help",
   confused: "I don't have that one",
   sad: "That one needs a person",
@@ -77,6 +87,8 @@ export interface AssistantChat {
   send: (raw: string) => Promise<void>;
   /** Call on every keystroke so Cubee listens while the person types. */
   typing: (value: string) => void;
+  /** Starts a new conversation: clears the transcript and the server memory. */
+  reset: () => void;
 }
 
 export function useAssistantChat({
@@ -88,6 +100,14 @@ export function useAssistantChat({
   ]);
   const [mood, setMood] = useState<AssistantMood>("idle");
   const [busy, setBusy] = useState(false);
+  /**
+   * The server holds the authoritative transcript once it has created a
+   * conversation; until then these two carry it. Only turns that went to the
+   * server are recorded here, so a private line answered in the browser can
+   * never ride along in somebody else's request.
+   */
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [history, setHistory] = useState<AssistantTurn[]>([]);
 
   const append = useCallback((line: ChatLine) => {
     setLines((current) => [...current, line]);
@@ -100,46 +120,60 @@ export function useAssistantChat({
 
       append({ role: "you", text: trimmed, kind: "support" });
 
-      if (isPlatformQuestion(trimmed)) {
-        setBusy(true);
-        setMood("thinking");
-
-        try {
-          const result = await askPlatformAssistant(trimmed);
-          append({
-            role: "assistant",
-            kind: result.safety ? "safety" : "documentation",
-            text: result.answer,
-            citations: result.citations,
-            source: "documentation",
-          });
-          setMood(result.safety ? "sad" : result.insufficient ? "confused" : "happy");
-        } catch {
-          append({
-            role: "assistant",
-            kind: "support",
-            text: unreachable,
-            source: "documentation",
-          });
-          setMood("confused");
-        } finally {
-          setBusy(false);
-        }
-
+      if (staysInBrowser(trimmed)) {
+        const reply = aiReply(trimmed, context);
+        append({
+          role: "assistant",
+          kind: reply.kind,
+          text: reply.text,
+          actions: reply.actions,
+          source: "browser",
+        });
+        setMood(reply.kind === "safety" ? "sad" : "happy");
         return;
       }
 
-      const reply = aiReply(trimmed, context);
-      append({
-        role: "assistant",
-        kind: reply.kind,
-        text: reply.text,
-        actions: reply.actions,
-        source: "browser",
-      });
-      setMood(reply.kind === "safety" ? "sad" : "happy");
+      setBusy(true);
+      setMood("thinking");
+
+      try {
+        const result = await askPlatformAssistant(trimmed, { conversationId, history });
+
+        const cited = (result.citations?.length ?? 0) > 0;
+        const source: ReplySource = cited ? "documentation" : "conversation";
+
+        append({
+          role: "assistant",
+          kind: result.safety ? "safety" : "documentation",
+          text: result.answer,
+          citations: result.citations,
+          source,
+          answerKind: result.kind,
+        });
+
+        setConversationId(result.conversationId ?? conversationId);
+        setHistory((current) =>
+          [
+            ...current,
+            { role: "user" as const, content: trimmed },
+            { role: "assistant" as const, content: result.answer },
+          ].slice(-20)
+        );
+
+        setMood(result.safety ? "sad" : result.insufficient ? "confused" : "happy");
+      } catch {
+        append({
+          role: "assistant",
+          kind: "support",
+          text: unreachable,
+          source: "conversation",
+        });
+        setMood("confused");
+      } finally {
+        setBusy(false);
+      }
     },
-    [busy, context, unreachable, append]
+    [busy, context, conversationId, history, unreachable, append]
   );
 
   const typing = useCallback(
@@ -149,7 +183,14 @@ export function useAssistantChat({
     [busy]
   );
 
-  return { lines, mood, busy, send, typing };
+  const reset = useCallback(() => {
+    setLines([{ role: "assistant", kind: "support", text: OPENING_LINE, source: "browser" }]);
+    setConversationId(null);
+    setHistory([]);
+    setMood("idle");
+  }, []);
+
+  return { lines, mood, busy, send, typing, reset };
 }
 
 /**
@@ -189,7 +230,9 @@ export function ChatBubble({ line, assistantName }: { line: ChatLine; assistantN
         >
           {line.source === "documentation"
             ? "Answered from our documentation"
-            : "Answered in this browser - nothing you typed was sent anywhere"}
+            : line.source === "conversation"
+              ? "Answered by Ask Cube"
+              : "Answered in this browser - nothing you typed was sent anywhere"}
         </span>
       )}
 

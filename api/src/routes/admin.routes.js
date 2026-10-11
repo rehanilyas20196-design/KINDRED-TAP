@@ -216,8 +216,8 @@ adminRouter.post(
     }
 
     if (!req.body || Object.keys(req.body).length === 0) {
-      const results = await rag.indexCorpus();
-      return res.json({ results, stats: await rag.stats() });
+      const sync = await rag.syncAll();
+      return res.json({ results: sync.results, sync, stats: await rag.stats() });
     }
 
     const document = parse(kbDocumentSchema, req.body);

@@ -28,7 +28,7 @@ import {
 export function AssistantDock() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const { lines, mood, busy, send, typing } = useAssistantChat({
+  const { lines, mood, busy, send, typing, reset } = useAssistantChat({
     // The widget cannot offer a ticket form, so a failed lookup points back at
     // the page that can. This is the only difference from the support page.
     unreachable:
@@ -85,7 +85,7 @@ export function AssistantDock() {
           <header className="flex items-center gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60">
             <Cubee mood={mood} size={44} />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Cubee</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">Ask Cube</p>
               <p
                 role="status"
                 aria-live="polite"
@@ -94,6 +94,28 @@ export function AssistantDock() {
                 {MOOD_LABEL[mood]}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => reset()}
+              disabled={lines.length <= 1}
+              aria-label="Start a new conversation"
+              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 disabled:opacity-40 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+            >
+              {/* Not in the shared glyph set: a refresh mark is chrome, not a
+                  concept the portal vocabulary needs a name for. */}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M20 11a8 8 0 1 0-2.3 6.1" />
+                <path d="M20 5v6h-6" />
+              </svg>
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -126,7 +148,7 @@ export function AssistantDock() {
             className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
           >
             {lines.map((line, index) => (
-              <ChatBubble key={`${line.role}-${index}`} line={line} assistantName="Cubee" />
+              <ChatBubble key={`${line.role}-${index}`} line={line} assistantName="Ask Cube" />
             ))}
           </div>
 
@@ -163,7 +185,8 @@ export function AssistantDock() {
           </form>
 
           <p className="border-t border-slate-100 px-4 py-2 text-[11px] leading-4 text-slate-500 dark:border-slate-800 dark:text-slate-500">
-            How you feel stays in this browser.{" "}
+            How you feel stays in this browser. Ask Cube reads our documentation for anything
+            else.{" "}
             <Link
               href="/portal/user/support"
               className="font-medium text-teal-700 hover:underline dark:text-teal-300"
@@ -184,7 +207,7 @@ export function AssistantDock() {
       >
         <Cubee mood={open ? mood : undefined} size={40} label="" />
         <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-          {open ? "Hide" : "Ask Cubee"}
+          {open ? "Hide" : "Ask Cube"}
         </span>
       </button>
     </div>
