@@ -49,6 +49,18 @@ export default function LoginForm({
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
   const [accepted, setAccepted] = useState<boolean | undefined>(undefined);
+  /**
+   * Set when the server refuses the sign-in.
+   *
+   * The API answers "Incorrect email or password" as a banner, not a field
+   * error, because it genuinely cannot know which one is wrong - so nothing
+   * in `errors` would ever mark the password, and the field whose correctness
+   * is unknowable before submit would be the one face that never reacted.
+   * The refusal lands there instead, and the banner still carries the full
+   * message. Cleared the moment anything is edited: a verdict on old text
+   * must not outlive the text.
+   */
+  const [rejected, setRejected] = useState(false);
   const router = useRouter();
   const { state: gate, signOut } = useSessionGate(portal.key);
 
@@ -57,7 +69,7 @@ export default function LoginForm({
   // word on that. Submit still owns the real check; nothing here can allow one.
   const fields = {
     email: withError(emailState(email), errors.email),
-    password: withError(passwordState(password), errors.password),
+    password: rejected || errors.password ? "wrong" : passwordState(password),
   };
   const { mood } = useCubeeForm(fields, accepted);
 
@@ -70,6 +82,7 @@ export default function LoginForm({
   /** Any edit retires the last outcome - a reaction must never outlive its cause. */
   function resetOutcome() {
     if (accepted !== undefined) setAccepted(undefined);
+    if (rejected) setRejected(false);
   }
 
   /**
@@ -90,6 +103,7 @@ export default function LoginForm({
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAccepted(undefined);
+    setRejected(false);
 
     const nextErrors: Record<string, string> = {};
     if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = "Enter a valid email address";
@@ -128,6 +142,7 @@ export default function LoginForm({
     } catch (error) {
       setBanner(messageFor(error));
       setErrors(toFieldErrors(error));
+      setRejected(true);
       setAccepted(false);
     } finally {
       setPending(false);

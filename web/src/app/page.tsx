@@ -4,7 +4,6 @@ import { PORTALS, loginPath, signupPath } from "@/lib/portals";
 import { PortalIcon } from "@/components/portal-icon";
 import { Logo } from "@/components/logo";
 import { Icon } from "@/components/icons";
-import { Cubee } from "@/components/cubee";
 import type { IconName } from "@/components/icons";
 import BlurText from "@/components/BlurText";
 
@@ -194,7 +193,6 @@ export default function Home() {
 
             {/* Illustrative flow — the path to support, shown as one picture. */}
             <div className="reveal reveal-right" data-delay="0.2">
-              <Cubee size={104} className="mb-4" />
               <div className="card p-4 shadow-sm sm:p-5">
                 <Image
                   src="/support-path.png"

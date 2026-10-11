@@ -9,7 +9,7 @@
  */
 
 /** A form's own states, before they are mapped onto a face. */
-export type FieldState = "empty" | "typing" | "ok" | "wrong";
+export type FieldState = "empty" | "ok" | "wrong";
 
 /**
  * The faces a form may show. All ship in the avatar definition.
@@ -18,7 +18,7 @@ export type FieldState = "empty" | "typing" | "ok" | "wrong";
  * that is "thinking" or "confused" is a form that has lost track of what the
  * person is doing, and neither is ever true here.
  */
-export type FormMood = "idle" | "listening" | "happy" | "angry" | "bored";
+export type FormMood = "idle" | "listening" | "happy" | "angry" | "shy" | "bored";
 
 /** Live twin of the login form's email check. Submit stays authoritative. */
 export function emailState(value: string): FieldState {
@@ -27,9 +27,16 @@ export function emailState(value: string): FieldState {
   return /^\S+@\S+\.\S+$/.test(trimmed) ? "ok" : "wrong";
 }
 
-/** Live twin of the login form's password check: present, not yet judged. */
+/**
+ * Live twin of the login form's password check.
+ *
+ * A password's correctness cannot be judged before submit - only whether it
+ * is there, which is exactly the rule the form itself enforces. So it reads
+ * as right once it has a value, and as wrong when the server rejects it,
+ * which the caller reports through `withError`.
+ */
 export function passwordState(value: string): FieldState {
-  return value ? "typing" : "empty";
+  return value ? "ok" : "empty";
 }
 
 /** Live twin of the signup form's password rules. */
@@ -68,7 +75,11 @@ export function withError(state: FieldState, error?: string): FieldState {
 }
 
 /**
- * The face a field earns. "typing" is neutral on purpose: guessing early is rude.
+ * The face a field earns.
+ *
+ * Three states, three faces, no overlap: wrong is angry, right is happy, and
+ * a field nobody has filled in yet earns "shy" rather than an attentive face
+ * that suggests something is being watched when nothing has happened.
  *
  * Form vocabulary and Cubee vocabulary are not the same set, so they are
  * translated here rather than at each call site: a form should never have to
@@ -81,7 +92,7 @@ export function moodForField(state: FieldState): FormMood {
     case "ok":
       return "happy";
     default:
-      return "listening";
+      return "shy";
   }
 }
 

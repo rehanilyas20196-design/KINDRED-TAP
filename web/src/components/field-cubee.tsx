@@ -38,7 +38,16 @@ export function FieldCubee({
       <label htmlFor={id} className="field-label mb-0">
         {label}
       </label>
-      <span className="ml-auto shrink-0 self-start" aria-hidden="true">
+      {/* Keyed on the mood, so a new verdict means a new element and the
+          reaction plays from the start rather than needing a timer to
+          restart it. The avatar's own animations are slow enough at this
+          size that the switch alone reads as a still image; this is the
+          part that actually says "he noticed". */}
+      <span
+        key={mood}
+        className="ml-auto shrink-0 self-start animate-cubee-react"
+        aria-hidden="true"
+      >
         <Cubee mood={mood} size={size} label="" />
       </span>
     </div>
