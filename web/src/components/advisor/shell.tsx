@@ -74,7 +74,10 @@ export const ADVISOR_NAV: AdvisorNavGroup[] = [
   },
   {
     label: "Administration",
-    items: [{ href: `${root}/settings`, label: "Settings", icon: "settings" }],
+    items: [
+      { href: `${root}/settings`, label: "Settings", icon: "settings" },
+      { href: `${root}/profile`, label: "My Profile", icon: "profile" },
+    ],
   },
 ];
 

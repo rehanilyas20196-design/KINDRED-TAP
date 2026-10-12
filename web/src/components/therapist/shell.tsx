@@ -49,6 +49,7 @@ export const THERAPIST_NAV: NavItem[] = [
   { href: "/portal/therapist/messages", label: "Messages", icon: "messages" },
   { href: "/portal/therapist/notifications", label: "Notifications", icon: "notifications" },
   { href: "/portal/therapist/settings", label: "Settings", icon: "settings" },
+  { href: "/portal/therapist/profile", label: "My Profile", icon: "profile" },
 ];
 
 function isActive(pathname: string, item: NavItem): boolean {

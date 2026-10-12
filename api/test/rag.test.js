@@ -596,6 +596,92 @@ test("overlapping results are collapsed before they reach the prompt", async () 
 });
 
 /* ------------------------------------------------------------------ *
+ * Questions the routing regex does not recognise
+ * ------------------------------------------------------------------ */
+
+/**
+ * A dataset question is an ordinary English sentence. "What issues do you
+ * cover?" contains no portal word, so the router calls it conversation -
+ * which used to mean the corpus was never searched and the model answered
+ * from its own head. Retrieval, not the regex, has to be what decides.
+ */
+test("a question the router calls conversation is still answered from the corpus", async () => {
+  const generateCalls = [];
+  const rag = ragModule.createRag({
+    autoSeed: false,
+    embed: async (text) => fakeEmbed(text),
+    embedBatch: async (texts) => texts.map(fakeEmbed),
+    generate: async (options) => {
+      generateCalls.push(options);
+      return "Volunteers are recruited from the community. [Volunteering]";
+    },
+  });
+
+  await rag.indexDocument({
+    source: "dataset:volunteering",
+    title: "Volunteering",
+    content:
+      "# Volunteering\n\nVolunteers are recruited from the community and complete safeguarding training before their first shift.",
+  });
+
+  try {
+    assert.equal(
+      ragModule.routeMessage("How do volunteers get recruited?").kind,
+      "conversation",
+      "no product term, so the router alone would never search"
+    );
+
+    const result = await rag.answer("How do volunteers get recruited?", { minScore: 0.01 });
+
+    assert.equal(result.kind, "documented");
+    assert.equal(result.insufficient, false);
+    assert.equal(result.citations.length, 1);
+    assert.equal(result.citations[0].source, "dataset:volunteering");
+    assert.ok(generateCalls.length === 1, "the model is called exactly once");
+    assert.ok(
+      generateCalls[0].prompt.includes("<context"),
+      "a corpus hit belongs in the prompt even when the router missed it"
+    );
+    assert.ok(generateCalls[0].prompt.includes("Volunteers are recruited"));
+  } finally {
+    await rag.removeDocument("dataset:volunteering");
+  }
+});
+
+test("the product pattern recognises the vocabulary the datasets are built from", () => {
+  assert.equal(ragModule.routeMessage("What partner services are available?").kind, "platform");
+  assert.equal(ragModule.routeMessage("What are the clinical standards?").kind, "platform");
+  assert.equal(ragModule.routeMessage("Which personality questions do you ask?").kind, "platform");
+  // Still not every sentence: a feeling is not a product question.
+  assert.equal(ragModule.routeMessage("I feel exhausted today").kind, "conversation");
+});
+
+test("a chunk is matched on its document title and heading, not only its body", async () => {
+  const rag = ragModule.createRag({
+    autoSeed: false,
+    embed: async (text) => fakeEmbed(text),
+    embedBatch: async (texts) => texts.map(fakeEmbed),
+    generate: async () => "unused",
+  });
+
+  await rag.indexDocument({
+    source: "dataset:question-banks",
+    title: "Question banks",
+    content:
+      "# Question banks\n\nEvery item below is scored on a five point scale and reviewed each quarter by the clinical team.",
+  });
+
+  try {
+    // The words "question" and "banks" appear only in the title and heading;
+    // the body never says them. A lexical gate over the body alone misses.
+    const hits = await rag.retrieve("question banks", { minScore: 0.99, keywordMin: 0.9 });
+    assert.equal(hits.length, 1, "the title is part of what a chunk is matched on");
+  } finally {
+    await rag.removeDocument("dataset:question-banks");
+  }
+});
+
+/* ------------------------------------------------------------------ *
  * Conversation memory
  * ------------------------------------------------------------------ */
 

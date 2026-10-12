@@ -22,6 +22,12 @@ export const GLYPHS = {
       <path d="M17.5 14.4c1.9.6 3 2.1 3.4 4.6" />
     </>
   ),
+  profile: (
+    <>
+      <circle cx="12" cy="8" r="3.4" />
+      <path d="M5 20c.7-3.6 3.4-5.4 7-5.4s6.3 1.8 7 5.4" />
+    </>
+  ),
   sessions: (
     <>
       <rect x="3.5" y="5" width="17" height="15" rx="2.5" />

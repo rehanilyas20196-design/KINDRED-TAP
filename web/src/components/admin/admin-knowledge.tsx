@@ -43,6 +43,9 @@ export function AdminKnowledge({ onSessionLost }: { onSessionLost: () => void })
   const [stats, setStats] = useState<AdminKbStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Sources the last reindex could not build - without these a skipped
+   *  dataset looks exactly like a successful one. */
+  const [syncWarnings, setSyncWarnings] = useState<string[]>([]);
   const [busy, setBusy] = useState<Busy>(null);
 
   const [draftOpen, setDraftOpen] = useState(false);
@@ -119,6 +122,7 @@ export function AdminKnowledge({ onSessionLost }: { onSessionLost: () => void })
 
   async function reindex() {
     setNotice(null);
+    setSyncWarnings([]);
     const result = await attempt("sync", () =>
       adminFetch<AdminKbIndexResult>("/api/admin/kb/index", { method: "POST", body: {} })
     );
@@ -129,6 +133,7 @@ export function AdminKnowledge({ onSessionLost }: { onSessionLost: () => void })
             `${result.sync.removed ? `, retired ${result.sync.removed}` : ""}.`
         : `Indexed ${result.results.length} document${result.results.length === 1 ? "" : "s"}.`
     );
+    setSyncWarnings(result.sync?.warnings ?? []);
     await refresh();
   }
 
@@ -251,6 +256,16 @@ export function AdminKnowledge({ onSessionLost }: { onSessionLost: () => void })
       {notice ? (
         <Alert tone="success" title="Done">
           {notice}
+        </Alert>
+      ) : null}
+
+      {syncWarnings.length > 0 ? (
+        <Alert tone="warning" title="Some sources were not indexed">
+          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+            {syncWarnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
         </Alert>
       ) : null}
 

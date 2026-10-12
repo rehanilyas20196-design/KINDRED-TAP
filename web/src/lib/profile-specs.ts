@@ -342,13 +342,25 @@ export const profileSpecs: Record<string, FieldSpec[]> = {
 };
 
 /**
+ * The API returns a saved role profile with its database column names
+ * (`date_of_birth`, `emergency_contact_name`), while the form asks in
+ * camelCase. A field whose two spellings are never reconciled looks empty on
+ * every revisit, so both are tried before falling back to the default.
+ */
+function savedValue(profile: Record<string, unknown> | null | undefined, name: string) {
+  if (!profile) return undefined;
+  if (profile[name] !== undefined && profile[name] !== null) return profile[name];
+  return profile[name.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`)];
+}
+
+/**
  * Builds the form's starting values: keeps saved values from the API, fills
  * in spec defaults for anything untouched.
  */
 export function initialProfileValues(spec: FieldSpec[], profile: Record<string, unknown> | null): ProfileValues {
   const values: ProfileValues = {};
   for (const field of spec) {
-    const saved = profile?.[field.name];
+    const saved = savedValue(profile, field.name);
     if (field.kind === "number") {
       values[field.name] = typeof saved === "number" ? saved : field.initial;
       continue;

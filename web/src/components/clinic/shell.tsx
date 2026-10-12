@@ -87,6 +87,7 @@ export const CLINIC_NAV: ClinicNavGroup[] = [
   {
     label: "Account",
     items: [
+      { href: `${clinicRoot}/profile`, label: "My Profile", icon: "profile" },
       { href: `${clinicRoot}/organization`, label: "Organization Profile", icon: "clients" },
       { href: `${clinicRoot}/settings`, label: "Settings", icon: "settings" },
     ],

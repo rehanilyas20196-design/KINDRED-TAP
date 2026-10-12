@@ -28,6 +28,7 @@ const HEADER_NAV: Record<string, HeaderLink[]> = {
     { href: "/portal/user/matching", label: "Matches" },
     { href: "/portal/user/messages", label: "Messages" },
     { href: "/portal/user/support", label: "Support" },
+    { href: "/portal/user/profile", label: "Profile" },
   ],
   // The supporter portal has no section nav of its own — the header is the
   // only way to reach the session room, so it has to carry these. (Messages
@@ -37,6 +38,7 @@ const HEADER_NAV: Record<string, HeaderLink[]> = {
     { href: "/portal/supporter/supporter-session", label: "Session room" },
     { href: "/portal/supporter/supporter-tools", label: "Tools" },
     { href: "/portal/supporter/support", label: "Support" },
+    { href: "/portal/supporter/profile", label: "Profile" },
   ],
 };
 

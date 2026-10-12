@@ -142,6 +142,13 @@ const PLATFORM_PATTERN = new RegExp(
     "\\b(therapist|supporter|advisor|supervisor|clinic|clinician)\\b",
     "\\b(ethic\\w*|standard\\w*|guideline\\w*|privacy|consent|gdpr)\\b",
     "\\b(dashboard|notification|messag\\w*|ticket|support|settings?|page|feature)\\b",
+    // The vocabulary the dataset sources are built from: partner services,
+    // the concern list, clinical standards, ethics guidelines and the two
+    // question banks. Without these a question about what the platform
+    // actually offers is treated as small talk and answered from the model's
+    // own head rather than from the corpus the admin just reindexed.
+    "\\b(services?|pricing|fees?|question bank|assessment questions?|personality (?:test|questions?))\\b",
+    "\\b(what|which) (do|does|can) (i|we|you) (offer|support|provide|cover)",
   ].join("|"),
   "i"
 );
@@ -714,7 +721,14 @@ export function createRag(deps = {}) {
       const vector = cosineSimilarity(queryVector, parseEmbedding(row.embedding));
       if (!Number.isFinite(vector)) continue;
 
-      const keyword = terms.length === 0 ? 0 : keywordCoverage(terms, row.content);
+      const keyword =
+        terms.length === 0
+          ? 0
+          : // The title and heading are part of the evidence: a dataset entry
+            // is often named by its heading ("Mental health assessment") while
+            // the body lists the detail, and a question naming the service
+            // should find it.
+            keywordCoverage(terms, `${row.title}\n${row.heading ?? ""}\n${row.content}`);
       const passes = vector >= minScore || keyword >= keywordMin;
       if (!passes) continue;
 
@@ -813,11 +827,13 @@ export function createRag(deps = {}) {
   /**
    * Answers one message.
    *
-   * The route decides everything downstream: a product question searches the
-   * knowledge base and refuses when nothing is close enough, while a greeting
-   * or an ordinary question talks to the model with no search at all. Refusal
-   * therefore still happens without a model call whenever the answer would
-   * have to be invented.
+   * Every message that is not a pleasantry is searched first. The routing
+   * regex cannot know what the corpus happens to hold: "what partner services
+   * are available?" is an ordinary English sentence until retrieval says the
+   * catalogue is the answer, and treating it as small talk is how a reindexed
+   * dataset ends up unused. A hit turns the turn into a cited answer; a miss
+   * leaves the route in charge - a product question is refused rather than
+   * invented, and an ordinary question is simply talked about.
    */
   async function answer(question, options = {}) {
     const { limit = DEFAULT_LIMIT, minScore = MIN_SCORE, history: rawHistory = [] } = options;
@@ -831,7 +847,17 @@ export function createRag(deps = {}) {
 
     await ensureCorpus();
 
-    if (route.kind === "conversation") {
+    // A pleasantry is answered without spending a search on it.
+    const greetsOnly =
+      route.kind === "conversation" &&
+      (route.reason === "greeting" || route.reason === "empty");
+    const hits = greetsOnly ? [] : await retrieve(text, { limit, minScore });
+
+    if (hits.length === 0 && route.kind === "platform") {
+      return { answer: REFUSAL_MESSAGE, citations: [], insufficient: true, kind: "refused" };
+    }
+
+    if (hits.length === 0) {
       try {
         const answerText = await generate({
           prompt: buildPrompt(text, [], history),
@@ -855,12 +881,6 @@ export function createRag(deps = {}) {
           routeReason: route.reason,
         };
       }
-    }
-
-    const hits = await retrieve(text, { limit, minScore });
-
-    if (hits.length === 0) {
-      return { answer: REFUSAL_MESSAGE, citations: [], insufficient: true, kind: "refused" };
     }
 
     const citations = citationsFor(hits);

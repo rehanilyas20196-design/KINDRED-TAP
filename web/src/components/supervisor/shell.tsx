@@ -69,7 +69,7 @@ export const SUPERVISOR_NAV: SupervisorNavGroup[] = [
     label: "Account",
     items: [
       { href: `${supervisorRoot}/settings`, label: "Settings", icon: "settings" },
-      { href: `${supervisorRoot}/profile`, label: "My Profile", icon: "clients" },
+      { href: `${supervisorRoot}/profile`, label: "My Profile", icon: "profile" },
     ],
   },
 ];
