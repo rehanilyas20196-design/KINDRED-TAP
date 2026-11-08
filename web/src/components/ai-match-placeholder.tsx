@@ -39,8 +39,8 @@ export function AiMatchPlaceholder() {
         </div>
 
         {/* Code snippet visualization placeholder */}
-        <div className="rounded-2xl bg-black/90 p-4 border border-slate-900 font-mono text-[11px] text-slate-500">
-          <div className="flex items-center justify-between text-[10px] text-slate-500 pb-2 border-b border-slate-800/60 mb-2">
+        <div className="rounded-2xl bg-[#07132C] p-4 border border-[#183366] font-mono text-[11px] text-slate-400">
+          <div className="flex items-center justify-between text-[10px] text-slate-400 pb-2 border-b border-[#183366]/60 mb-2">
             <span>ai_matching_connector.py / .ts</span>
             <span className="text-amber-400/80">{"// Add your AI logic here"}</span>
           </div>

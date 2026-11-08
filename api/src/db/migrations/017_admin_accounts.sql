@@ -1,14 +1,4 @@
--- 017_admin_accounts.sql
--- The admin identity, stored in the database.
---
--- A row here is what /admin checks when ADMIN_EMAIL/ADMIN_PASSWORD_HASH are
--- not set in the environment, so the panel can be used without editing a file
--- on every machine. It is deliberately a separate table from `users`: nothing
--- here shows up in the admin's own account list, no approval flow can reach
--- it, and no portal code ever reads it.
---
--- Set both ADMIN_EMAIL and ADMIN_PASSWORD_HASH in the environment to override
--- a row here (handy for a one-off login without touching the database).
+
 
 CREATE TABLE IF NOT EXISTS admin_accounts (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,0 +1,14 @@
+{
+  "admitted": true,
+  "reasons": [],
+  "provenance": {
+    "viewpoint": "reference",
+    "sourcePath": "D:\\kindered Tap\\reference.png",
+    "width": 1536,
+    "height": 1024,
+    "foregroundCoverage": 0.5039,
+    "largestComponentFraction": 1.0,
+    "pHash": 18230553609500919808,
+    "duplicateOfHash": null
+  }
+}

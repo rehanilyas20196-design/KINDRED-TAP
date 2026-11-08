@@ -3,17 +3,20 @@
 @import "shadcn/tailwind.css";
 
 /*
-  Kindred Tap design system — "Clinical Calm"
+  Kindred Tap design system — "Navy · Cream · Coral"
   ------------------------------------------------------------------
-  Light-first, single-source palette for a mental-health product.
-  Every token below keeps the same *name* the app already uses
-  (slate / teal / emerald / amber / red / rose / sky / sage / purple
-  / blue), so existing utility classes keep working while the values
-  are retuned to a calm, trustworthy, healthcare-grade scale.
+  Three colors carry the whole product:
+    · Navy   — foreground, primary actions, links, dark surfaces
+    · Cream  — page background, surfaces, light borders
+    · Coral  — accents, warnings, danger/safeguarding actions
+  Red stays only for form-validation errors (semantic accessibility).
+  Every token keeps the *name* the app already uses (slate / teal /
+  emerald / amber / …), so existing utility classes keep working while
+  the values are retuned to the navy/cream/coral scale.
 
   Principles
-    · One accent (teal) — never gradients for their own sake
-    · Warm, low-chroma neutrals instead of blue-grey "app chrome"
+    · One accent family (coral) — never gradients for their own sake
+    · Cream, low-chroma neutrals instead of cold grey "app chrome"
     · Text contrast >= 4.5:1 everywhere it carries meaning
     · Spacing on a 4/8 rhythm; radius and shadow as tokens
     · Motion is short (120–240ms) and always optional
@@ -25,12 +28,29 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  /* Navy, Cream, and Coral Theme Tokens (NO BLACK, NO ORANGE) */
+  --color-coral: #FF6B6B; /* True pink-coral, NOT orange */
+  --color-coral-dark: #E05353;
+  --color-coral-light: #FFEAE8;
+  --color-primary: #FF6B6B;
+  --color-secondary: #FFEAE8;
+  --color-navy: #0B1B3D; /* True deep navy blue, NOT black */
+  --color-navy-dark: #07132C;
+  --color-navy-light: #183366;
+  --color-cream: #FAF6EE; /* Warm rich cream canvas */
+  --color-cream-muted: #F2EAD9;
+  --color-cream-border: #E5D9C5;
+  --color-border: #E5D9C5;
+  --color-muted: #F2EAD9;
+  --color-surface: #FFFFFF;
+  --color-ink: #0B1B3D; /* Navy text, NOT black */
+  --font-display: "Times New Roman", Times, "Liberation Serif", Georgia, serif;
 
   /* Elevation */
-  --shadow-xs: 0 1px 2px 0 rgb(16 32 28 / 0.04);
-  --shadow-sm: 0 1px 2px -1px rgb(16 32 28 / 0.06), 0 2px 6px -2px rgb(16 32 28 / 0.06);
-  --shadow-md: 0 2px 4px -2px rgb(16 32 28 / 0.06), 0 8px 20px -6px rgb(16 32 28 / 0.1);
-  --shadow-lg: 0 8px 16px -8px rgb(16 32 28 / 0.12), 0 24px 48px -24px rgb(16 32 28 / 0.18);
+  --shadow-xs: 0 1px 2px 0 rgb(13 18 36 / 0.05);
+  --shadow-sm: 0 1px 2px -1px rgb(13 18 36 / 0.07), 0 2px 6px -2px rgb(13 18 36 / 0.07);
+  --shadow-md: 0 2px 4px -2px rgb(13 18 36 / 0.07), 0 8px 20px -6px rgb(13 18 36 / 0.11);
+  --shadow-lg: 0 8px 16px -8px rgb(13 18 36 / 0.13), 0 24px 48px -24px rgb(13 18 36 / 0.19);
 
   /* Radius lives in @theme below — a single source of truth so the
      `rounded-*` utilities and the `.btn` / `.card` primitives can never
@@ -41,38 +61,38 @@
   --dur-fast: 120ms;
   --dur-base: 180ms;
   --dur-slow: 260ms;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --background: oklch(0.965 0.012 85);
+  --foreground: oklch(0.245 0.045 265);
+  --card: oklch(0.99 0.005 90);
+  --card-foreground: oklch(0.245 0.045 265);
+  --popover: oklch(0.99 0.005 90);
+  --popover-foreground: oklch(0.245 0.045 265);
+  --primary: oklch(0.313 0.09 265);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.955 0.012 85);
+  --secondary-foreground: oklch(0.245 0.045 265);
+  --muted: oklch(0.955 0.012 85);
+  --muted-foreground: oklch(0.5 0.015 85);
+  --accent: oklch(0.955 0.012 85);
+  --accent-foreground: oklch(0.245 0.045 265);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: oklch(0.895 0.015 85);
+  --input: oklch(0.895 0.015 85);
+  --ring: oklch(0.55 0.11 265);
+  --chart-1: oklch(0.72 0.11 265);
+  --chart-2: oklch(0.5 0.015 85);
+  --chart-3: oklch(0.43 0.09 265);
+  --chart-4: oklch(0.37 0.07 265);
+  --chart-5: oklch(0.62 0.14 45);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar: oklch(0.975 0.01 85);
+  --sidebar-foreground: oklch(0.245 0.045 265);
+  --sidebar-primary: oklch(0.313 0.09 265);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.955 0.012 85);
+  --sidebar-accent-foreground: oklch(0.245 0.045 265);
+  --sidebar-border: oklch(0.895 0.015 85);
+  --sidebar-ring: oklch(0.55 0.11 265);
 }
 
 @theme {
@@ -243,6 +263,12 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-plex-mono);
   --font-heading: var(--font-figtree);
+  --font-display: var(--font-display);
+  --color-ink: var(--color-ink);
+  --color-surface: var(--color-surface);
+  --color-navy: var(--color-navy);
+  --color-cream: var(--color-cream);
+  --color-coral: var(--color-coral);
 
   /* Motion tokens */
   --animate-rise-in: rise-in 0.42s var(--ease-out) both;
@@ -509,29 +535,60 @@ html {
   opacity: 0.55;
 }
 
-.btn-primary {
-  background-color: var(--color-teal-700);
-  color: #ffffff;
+.btn-primary,
+.btn-coral {
+  background-color: var(--color-coral);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-xs);
+  border-radius: 0.375rem;
+}
+.btn-primary:hover:not(:disabled),
+.btn-coral:hover:not(:disabled) {
+  background-color: var(--color-navy);
+  color: #FAF6EE;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-ink,
+.btn-navy {
+  background-color: var(--color-navy);
+  color: #FAF6EE;
+  border-radius: 0.375rem;
   box-shadow: var(--shadow-xs);
 }
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-teal-800);
+.btn-ink:hover:not(:disabled),
+.btn-navy:hover:not(:disabled) {
+  background-color: var(--color-coral);
+  color: #FFFFFF;
   box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary {
-  background-color: #ffffff;
-  color: var(--color-slate-700);
-  box-shadow:
-    inset 0 0 0 1px var(--color-slate-300),
-    var(--shadow-xs);
+  background-color: var(--color-secondary);
+  color: var(--color-navy);
+  border: 1px solid #FFD0CC;
+  border-radius: 0.375rem;
 }
 .btn-secondary:hover:not(:disabled) {
-  border-color: var(--color-slate-400);
-  color: var(--color-slate-900);
-  box-shadow:
-    inset 0 0 0 1px var(--color-slate-400),
-    var(--shadow-sm);
+  background-color: #FFDCD9;
+  color: var(--color-navy);
+}
+
+.badge-tilted {
+  display: inline-block;
+  background-color: var(--color-coral);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  line-height: 1;
+  padding: 0.375rem 0.75rem;
+  transform: rotate(-1.5deg);
+  user-select: none;
+  font-weight: 500;
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
 
 .btn-ghost {
@@ -572,6 +629,72 @@ html {
   border: 1px solid var(--color-slate-200);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-xs);
+}
+
+.card-premium {
+  position: relative;
+  background-color: #ffffff;
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 4px 20px -2px rgb(16 32 28 / 0.04), 0 1px 3px 0 rgb(16 32 28 / 0.02);
+  transition:
+    transform var(--dur-slow) var(--ease-out),
+    box-shadow var(--dur-slow) var(--ease-out),
+    border-color var(--dur-slow) var(--ease-out);
+}
+.card-premium:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px -15px rgb(16 32 28 / 0.08), 0 0 0 1px var(--color-teal-200);
+  border-color: var(--color-teal-300);
+}
+
+.glass-panel {
+  background-color: rgb(255 255 255 / 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgb(235 238 236 / 0.9);
+  box-shadow: 0 10px 30px -10px rgb(16 32 28 / 0.06), 0 1px 3px 0 rgb(16 32 28 / 0.04);
+}
+
+.bg-dot-grid {
+  background-image: radial-gradient(rgb(33 132 119 / 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.pulse-beacon {
+  position: relative;
+  display: inline-flex;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+.pulse-beacon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background-color: var(--color-emerald-500);
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.75;
+}
+.pulse-beacon::after {
+  content: '';
+  position: relative;
+  display: inline-flex;
+  border-radius: 9999px;
+  height: 0.5rem;
+  width: 0.5rem;
+  background-color: var(--color-emerald-600);
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .panel {
