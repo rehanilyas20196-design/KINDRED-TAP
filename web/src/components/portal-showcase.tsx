@@ -106,14 +106,14 @@ export function PortalShowcase() {
                 onClick={() => setActiveCategory(cat.id)}
                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                   isActive
-                    ? "bg-[#0B1B3D] text-[#FAF6EE]"
-                    : "bg-white text-[#0B1B3D]/70 border border-[#E5D9C5] hover:border-[#0B1B3D] hover:text-[#0B1B3D]"
+                    ? "bg-[#086288] text-[#FFEFC4]"
+                    : "bg-white text-[#086288]/70 border border-[#f0dfa8] hover:border-[#086288] hover:text-[#086288]"
                 }`}
               >
                 <span>{cat.label}</span>
                 <span
                   className={`inline-flex h-4 min-w-[1rem] items-center justify-center rounded px-1 text-[10px] font-mono ${
-                    isActive ? "bg-white/20 text-[#FAF6EE]" : "bg-[#F2EAD9] text-[#0B1B3D]/70"
+                    isActive ? "bg-white/20 text-[#FFEFC4]" : "bg-[#FFEFC4] text-[#086288]/70"
                   }`}
                 >
                   {cat.count}
@@ -130,12 +130,12 @@ export function PortalShowcase() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search roles..."
-            className="w-full rounded-md border border-[#E5D9C5] bg-white py-1.5 pl-3 pr-8 text-xs text-[#0B1B3D] placeholder-[#0B1B3D]/40 outline-none focus:border-[#FF6B6B] transition-colors"
+            className="w-full rounded-md border border-[#f0dfa8] bg-white py-1.5 pl-3 pr-8 text-xs text-[#086288] placeholder-[#086288]/40 outline-none focus:border-[#086288] transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[#0B1B3D]/40 hover:text-[#0B1B3D]"
+              className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-[#086288]/40 hover:text-[#086288]"
               aria-label="Clear search"
             >
               ×
@@ -152,12 +152,12 @@ export function PortalShowcase() {
           return (
             <article
               key={portal.key}
-              className="group flex flex-col justify-between rounded-xl border border-[#E5D9C5] bg-white p-6 shadow-xs hover:border-[#FF6B6B] hover:shadow-md transition-all duration-200"
+              className="group flex flex-col justify-between rounded-xl border border-[#f0dfa8] bg-white p-6 shadow-xs hover:border-[#4d8dba] hover:shadow-md transition-all duration-200"
             >
               <div>
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#F2EAD9] text-[#0B1B3D]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FFEFC4] text-[#086288]">
                     <PortalIcon role={portal.key} className="h-5 w-5" />
                   </span>
 
@@ -170,24 +170,24 @@ export function PortalShowcase() {
 
                 {/* Title & Tagline */}
                 <div className="mt-4">
-                  <h3 className="font-display text-lg font-bold text-[#0B1B3D]">
+                  <h3 className="font-display text-lg font-bold text-[#086288]">
                     {portal.portal}
                   </h3>
-                  <p className="mt-1 text-xs text-[#0B1B3D]/65 leading-relaxed">
+                  <p className="mt-1 text-xs text-[#086288]/65 leading-relaxed">
                     {portal.tagline}
                   </p>
                 </div>
 
                 {/* Key feature chip */}
-                <p className="mt-4 font-mono text-[11px] text-[#0B1B3D]/50 uppercase tracking-wide">
+                <p className="mt-4 font-mono text-[11px] text-[#086288]/50 uppercase tracking-wide">
                   {theme.highlightText}
                 </p>
 
                 {/* Short workflow */}
-                <ul className="mt-3.5 space-y-1.5 border-t border-[#E5D9C5] pt-3">
+                <ul className="mt-3.5 space-y-1.5 border-t border-[#f0dfa8] pt-3">
                   {portal.journey.slice(0, 3).map((step, idx) => (
-                    <li key={step} className="flex items-center gap-2 text-xs text-[#0B1B3D]/70">
-                      <span className="font-mono text-[10px] text-[#FF6B6B] font-semibold">{idx + 1}.</span>
+                    <li key={step} className="flex items-center gap-2 text-xs text-[#086288]/70">
+                      <span className="font-mono text-[10px] text-[#086288] font-semibold">{idx + 1}.</span>
                       <span className="truncate">{step}</span>
                     </li>
                   ))}
@@ -195,16 +195,16 @@ export function PortalShowcase() {
               </div>
 
               {/* Actions */}
-              <div className="mt-6 flex items-center gap-2 border-t border-[#E5D9C5] pt-4">
+              <div className="mt-6 flex items-center gap-2 border-t border-[#f0dfa8] pt-4">
                 <Link
                   href={loginPath(portal.key)}
-                  className="flex-1 rounded-md border border-[#E5D9C5] bg-white py-2 text-center text-xs font-medium text-[#0B1B3D] hover:border-[#0B1B3D] transition-colors"
+                  className="flex-1 rounded-md border border-[#f0dfa8] bg-white py-2 text-center text-xs font-medium text-[#086288] hover:border-[#086288] transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href={signupPath(portal.key)}
-                  className="flex-1 rounded-md bg-[#0B1B3D] py-2 text-center text-xs font-medium text-[#FAF6EE] hover:bg-[#FF6B6B] hover:text-white transition-colors"
+                  className="flex-1 rounded-md bg-[#086288] py-2 text-center text-xs font-medium text-[#FFEFC4] hover:bg-[#064e6b] hover:text-white transition-colors"
                 >
                   Open Portal
                 </Link>
