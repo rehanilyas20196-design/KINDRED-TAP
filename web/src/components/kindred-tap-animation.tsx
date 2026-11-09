@@ -49,7 +49,6 @@ export function KindredTapAnimation({ className }: { className?: string }) {
             <rect className={styles.wipe} x="440" y="760" width="1060" height="230" fill="#fff" />
           </mask>
         </defs>
-        <ellipse className={styles.glow} cx="965" cy="680" rx="150" ry="130" />
         <path className={`${styles.leaf} ${styles.lTop}`} d="M965 563C925 598 915 660 965 707C1015 660 1005 598 965 563Z" />
         <path className={`${styles.leaf} ${styles.lLeft}`} d="M850 661C910 655 958 690 953 764C890 768 845 725 850 661Z" />
         <path className={`${styles.leaf} ${styles.lRight}`} d="M1081 661C1021 655 973 690 978 764C1041 768 1086 725 1081 661Z" />

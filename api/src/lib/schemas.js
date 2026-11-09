@@ -505,3 +505,20 @@ export const assistantAskSchema = z.object({
 export const assistantConversationIdSchema = z.object({
   id: z.string().trim().min(1).max(64),
 });
+
+/* ------------------------------------------------------------------ */
+/* Video calls                                                        */
+/* ------------------------------------------------------------------ */
+
+export const initiateCallSchema = z.object({
+  conversationId: z.string().trim().uuid("Choose a valid conversation"),
+});
+
+export const callActionSchema = z.object({
+  callId: z.string().trim().uuid("Choose a valid call"),
+});
+
+export const endCallSchema = z.object({
+  callId: z.string().trim().uuid("Choose a valid call"),
+});
+

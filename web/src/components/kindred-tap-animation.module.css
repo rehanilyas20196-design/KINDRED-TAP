@@ -36,31 +36,19 @@
 }
 
 .go .leaf {
-  animation: grow 1s cubic-bezier(0.2, 1.4, 0.4, 1) forwards, sway 5s ease-in-out infinite;
+  animation: grow 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .go .lLeft {
-  animation-delay: 0.15s, 2.2s;
+  animation-delay: 0.15s;
 }
 
 .go .lRight {
-  animation-delay: 0.35s, 2.4s;
+  animation-delay: 0.35s;
 }
 
 .go .lTop {
-  animation-delay: 0.6s, 2.6s;
-}
-
-.glow {
-  fill: var(--leaf);
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: scale(0.3);
-}
-
-.go .glow {
-  animation: glow 1.8s ease-out 0.5s forwards;
+  animation-delay: 0.6s;
 }
 
 .word {
@@ -128,30 +116,6 @@
   }
 }
 
-@keyframes sway {
-  0%,
-  100% {
-    transform: rotate(0);
-  }
-  50% {
-    transform: rotate(2.5deg);
-  }
-}
-
-@keyframes glow {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  40% {
-    opacity: 0.18;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2.2);
-  }
-}
-
 @keyframes wipe {
   to {
     transform: scaleX(1);
@@ -207,7 +171,6 @@
     animation: none !important;
   }
 
-  .glow,
   .ring {
     display: none;
   }

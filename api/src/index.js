@@ -5,6 +5,7 @@ import cors from "cors";
 import morgan from "morgan";
 
 import { assertProductionConfig, env } from "./env.js";
+import { createSocketServer } from "./lib/socket.js";
 import { closeDb, getDriver } from "./db/index.js";
 import { runMigrations } from "./db/migrate.js";
 import { loadColumnMap } from "./lib/schemas.js";
@@ -29,6 +30,7 @@ import clinicOpsRouter from "./routes/clinicOps.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import assistantRouter from "./routes/assistant.routes.js";
 import inviteRouter from "./routes/invite.routes.js";
+import callsRouter from "./routes/calls.routes.js";
 
 /**
  * Compares origins by scheme, host and port, treating www.example.com and
@@ -147,6 +149,7 @@ export function createApp() {
   app.use("/api/admin", adminRouter);
   app.use("/api/assistant", assistantRouter);
   app.use("/api/invites", inviteRouter);
+  app.use("/api/calls", callsRouter);
   app.use("/api/meta", metaRouter);
 
   app.use(notFoundHandler);
@@ -185,7 +188,10 @@ export default function handler(req, res) {
 async function start() {
   await init();
 
-  const server = (app ??= createApp()).listen(env.port, () => {
+  const expressApp = app ??= createApp();
+  const { httpServer } = createSocketServer(expressApp);
+
+  const server = httpServer.listen(env.port, () => {
     console.log(`[api] Kindred Tap API listening on http://localhost:${env.port}`);
   });
 

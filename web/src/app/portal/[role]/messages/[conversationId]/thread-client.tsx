@@ -8,6 +8,9 @@ import { Icon } from "@/components/icons";
 import { apiFetch, messageFor } from "@/lib/api";
 import { portalFor } from "@/lib/portals";
 import { clockTime, type Message, type MessagesResponse } from "@/lib/support";
+import { CallButton } from "@/components/video-call/CallButton";
+import { VideoCallInterface } from "@/components/video-call/VideoCallInterface";
+import { useVideoCall } from "@/components/video-call/useVideoCall";
 
 const POLL_MS = 5000;
 
@@ -42,16 +45,37 @@ export default function MessageThread({
   const portal = portalFor(role);
 
   const [otherName, setOtherName] = useState<string | null>(null);
+  const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Kept apart from `error`: a failed *load* replaces the thread body, a
-  // failed *send* only shows the warning under the composer.
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [showVideoCall, setShowVideoCall] = useState(false);
   const bottom = useRef<HTMLDivElement | null>(null);
   const thread = useRef<HTMLElement | null>(null);
   const scrollRequested = useRef(false);
+
+  const {
+    callState,
+    call,
+    startCall,
+    acceptCall,
+    rejectCall,
+    cancelCall,
+    endCall,
+    isRinging,
+  } = useVideoCall({
+    conversationId,
+    user:
+      guard.kind === "ready"
+        ? guard.user
+        : ({ id: "", fullName: null, role: "", email: "", status: "" } as import("@/lib/api").AuthUser),
+    otherUserId: otherUserId ?? "",
+    onCallEnd: () => {
+      setShowVideoCall(false);
+    },
+  });
 
   const load = useCallback(
     async (forceScroll = false) => {
@@ -59,11 +83,10 @@ export default function MessageThread({
         const data = await apiFetch<MessagesResponse>(
           `/api/support/conversations/${conversationId}/messages`
         );
-        // Read the viewport before the update: a poll may only pull someone
-        // down if they were already at the bottom, or if they just sent.
         scrollRequested.current = forceScroll || isNearBottom(thread.current);
         setMessages(data.messages);
         setOtherName(data.other?.fullName ?? null);
+        setOtherUserId(data.other?.id ?? null);
         setLoadError(null);
       } catch (err) {
         setLoadError(messageFor(err));
@@ -108,7 +131,41 @@ export default function MessageThread({
     return <WrongPortalPanel expected={guard.expected} actual={guard.actual} />;
   }
 
+  const user = guard.user;
   const backHref = `/portal/${role}/messages`;
+
+  // Show the video call interface when a call is accepted/connecting/connected.
+  if (
+    showVideoCall &&
+    (callState === "accepted" || callState === "connecting" || callState === "connected") &&
+    call
+  ) {
+    return (
+      <RoleShell role={role} portal={portal!} user={user}>
+        <div className="space-y-4">
+          <div className="flex items-end justify-between gap-x-4 gap-y-2">
+            <LinkButton href={backHref} variant="ghost" size="sm">
+              <Icon name="arrowLeft" className="h-3.5 w-3.5" />
+              Back to messages
+            </LinkButton>
+            <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+              Video call
+            </h2>
+          </div>
+          <VideoCallInterface
+            roomId={call.roomId}
+            callId={call.id}
+            userName={user.fullName ?? "You"}
+            otherName={otherName ?? "Contact"}
+            onEnd={async () => {
+              await endCall();
+              setShowVideoCall(false);
+            }}
+          />
+        </div>
+      </RoleShell>
+    );
+  }
 
   function reload() {
     setLoadError(null);
@@ -139,7 +196,7 @@ export default function MessageThread({
   }
 
   return (
-    <RoleShell role={role} portal={portal!} user={guard.user}>
+    <RoleShell role={role} portal={portal!} user={user}>
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
@@ -156,6 +213,21 @@ export default function MessageThread({
               {`${messages.length} message${messages.length === 1 ? "" : "s"}`}
             </span>
           ) : null}
+          <CallButton
+            conversationId={conversationId}
+            user={user}
+            otherUserId={otherUserId ?? ""}
+            otherName={otherName ?? "Contact"}
+            callState={callState}
+            call={call}
+            isRinging={isRinging}
+            startCall={startCall}
+            acceptCall={acceptCall}
+            rejectCall={rejectCall}
+            cancelCall={cancelCall}
+            endCall={endCall}
+            onCallEnd={() => setShowVideoCall(false)}
+          />
         </div>
 
         <section ref={thread} className="card min-h-[320px] p-5">
@@ -175,7 +247,7 @@ export default function MessageThread({
           ) : (
             <ul className="space-y-3" aria-live="polite" aria-relevant="additions">
               {messages.map((message) => {
-                const mine = message.senderId === guard.user.id;
+                const mine = message.senderId === user.id;
                 return (
                   <li
                     key={message.id}

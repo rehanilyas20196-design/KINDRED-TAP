@@ -126,6 +126,11 @@
   --color-teal-900: #053d54;
   --color-teal-950: #032b3c;
 
+  /* Kindred Tap leaf accent */
+  --color-kindred-leaf: #477414;
+  --color-kindred-leaf-dark: #375e0f;
+  --color-kindred-leaf-soft: #eff5e6;
+
   /* ---------------------------------------------------------------- */
   /* Success — forest / pine green                                      */
   /* ---------------------------------------------------------------- */
@@ -549,6 +554,20 @@ html {
   border-color: var(--color-navy-dark);
   background-color: var(--color-navy-dark);
   color: #ffffff;
+}
+
+.btn-green {
+  border: 1px solid var(--color-kindred-leaf);
+  background-color: var(--color-kindred-leaf);
+  color: #ffffff;
+}
+.btn-green:hover:not(:disabled) {
+  border-color: var(--color-kindred-leaf-dark);
+  background-color: var(--color-kindred-leaf-dark);
+  color: #ffffff;
+}
+.btn-green:focus-visible {
+  outline-color: var(--color-kindred-leaf);
 }
 
 .btn-ink,
@@ -1102,9 +1121,9 @@ html {
 }
 
 .auth-shell {
-  --auth-brand: #477414;
-  --auth-brand-hover: #375e0f;
-  --auth-brand-soft: #eff5e6;
+  --auth-brand: var(--color-kindred-leaf);
+  --auth-brand-hover: var(--color-kindred-leaf-dark);
+  --auth-brand-soft: var(--color-kindred-leaf-soft);
 }
 
 .auth-shell .auth-accent {

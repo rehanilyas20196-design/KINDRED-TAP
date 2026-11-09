@@ -62,7 +62,7 @@ function CheckIcon() {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-3.5 w-3.5 text-teal-600"
+      className="h-3.5 w-3.5 text-kindred-leaf"
       aria-hidden="true"
     >
       <path d="m5 12.5 4.5 4.5L19 7" />
@@ -108,7 +108,7 @@ export default function Home() {
               >
                 Log in
               </Link>
-              <Link href="/signup" className="btn btn-primary btn-sm whitespace-nowrap">
+              <Link href="/signup" className="btn btn-primary btn-green btn-sm whitespace-nowrap">
                 Create account
               </Link>
             </div>
@@ -144,11 +144,11 @@ export default function Home() {
         {/* ---------------------------------------------------------------- */}
         {/* Hero                                                              */}
         {/* ---------------------------------------------------------------- */}
-        <section className="mx-auto w-full max-w-6xl px-5 pb-16 pt-12 sm:px-8 sm:pb-24 sm:pt-20">
+        <section className="mx-auto w-full max-w-6xl px-5 pb-16 pt-12 sm:px-8 sm:pb-16 sm:pt-20">
           <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
             <div>
               <p
-                className="eyebrow text-xs font-medium normal-case tracking-normal"
+                className="eyebrow text-xs font-medium normal-case tracking-normal text-slate-500"
               >
                 Mental health support platform
               </p>
@@ -164,7 +164,7 @@ export default function Home() {
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/signup" className="btn btn-primary btn-lg">
+                <Link href="/signup" className="btn btn-primary btn-green btn-lg">
                   Create your account
                 </Link>
                 <Link href="/login" className="btn btn-secondary btn-lg">
@@ -173,7 +173,7 @@ export default function Home() {
               </div>
 
               <ul
-                className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-medium text-slate-500"
+                className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-slate-500"
               >
                 {TRUST.map((item) => (
                   <li key={item} className="inline-flex items-center gap-2">
@@ -201,17 +201,17 @@ export default function Home() {
         <section
           id="how-it-works"
           aria-labelledby="how-heading"
-          className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:py-20 md:scroll-mt-24"
+          className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:pb-20 sm:pt-16 md:scroll-mt-24"
         >
           <div className="max-w-2xl">
-            <p className="eyebrow text-xs font-medium normal-case tracking-normal">
+            <p className="eyebrow text-xs font-medium normal-case tracking-normal text-slate-500">
               How it works
             </p>
             <h2
               id="how-heading"
               className="mt-3 text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl"
             >
-              Three steps, and none of them ask you to know the right word.
+              Three steps, and none of them ask you to know the right word
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
               The assessment is written for a person having a hard week, not for a clinician
@@ -223,9 +223,9 @@ export default function Home() {
             {STEPS.map((step, index) => (
               <li
                 key={step.title}
-                className="card p-6"
+                className="border-t border-slate-200 pt-5"
               >
-                <span className="text-xs font-semibold tabular-nums text-teal-700">
+                <span className="text-xs font-semibold tabular-nums text-kindred-leaf">
                   Step {index + 1}
                 </span>
                 <h3 className="mt-2 text-base font-semibold text-slate-900">{step.title}</h3>
@@ -245,14 +245,14 @@ export default function Home() {
         >
           <div className="flex flex-wrap items-end justify-between gap-4 border-t border-slate-200 pt-10">
             <div className="max-w-2xl">
-              <p className="eyebrow text-xs font-medium normal-case tracking-normal">
+              <p className="eyebrow text-xs font-medium normal-case tracking-normal text-slate-500">
                 Choose your portal
               </p>
               <h2
                 id="portals-heading"
                 className="mt-3 text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl"
               >
-                Every role works from its own account and its own workspace.
+                Every role works from its own account and its own workspace
               </h2>
             </div>
             <p className="max-w-xs text-sm leading-6 text-slate-500">
@@ -268,7 +268,7 @@ export default function Home() {
                 className="card flex flex-col p-5 transition-colors hover:border-slate-400 sm:p-6"
               >
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-100">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-kindred-leaf ring-1 ring-inset ring-slate-200">
                     <PortalIcon role={portal.key} className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
@@ -281,10 +281,10 @@ export default function Home() {
                   {portal.description}
                 </p>
 
-                <ol className="mt-4 flex-1 space-y-1.5">
+                <ol className="mt-4 flex-1 space-y-2">
                   {portal.journey.map((step, stepIndex) => (
                     <li key={step} className="flex gap-2 text-xs leading-5 text-slate-500">
-                      <span className="font-semibold tabular-nums text-teal-700">
+                      <span className="font-semibold tabular-nums text-slate-500">
                         {stepIndex + 1}.
                       </span>
                       {step}
@@ -296,7 +296,7 @@ export default function Home() {
                   <Link href={loginPath(portal.key)} className="btn btn-secondary flex-1 whitespace-nowrap">
                     Log in
                   </Link>
-                  <Link href={signupPath(portal.key)} className="btn btn-primary flex-1 whitespace-nowrap">
+                  <Link href={signupPath(portal.key)} className="btn btn-primary btn-green flex-1 whitespace-nowrap">
                     Sign up
                   </Link>
                 </div>
@@ -329,14 +329,14 @@ export default function Home() {
           className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:py-20 md:scroll-mt-24"
         >
           <div className="max-w-2xl">
-            <p className="eyebrow text-xs font-medium normal-case tracking-normal">
+            <p className="eyebrow text-xs font-medium normal-case tracking-normal text-slate-500">
               Our principles
             </p>
             <h2
               id="principles-heading"
               className="mt-3 text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl"
             >
-              The rules the product is built to keep.
+              The rules the product is built to keep
             </h2>
           </div>
 
@@ -344,14 +344,14 @@ export default function Home() {
             {PRINCIPLES.map((item) => (
               <li
                 key={item.title}
-                className="card flex gap-4 p-6"
+                className="flex gap-4 border-t border-slate-200 pt-5"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-teal-700 ring-1 ring-inset ring-slate-200">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200">
                   <Icon name={item.icon} className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-slate-500">{item.body}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.body}</p>
                 </div>
               </li>
             ))}
@@ -364,14 +364,14 @@ export default function Home() {
         <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8 sm:pb-24">
           <div className="card overflow-hidden p-8 text-center sm:p-12">
             <h2 className="mx-auto max-w-2xl text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl">
-              Start where you actually are.
+              Start where you actually are
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
               Create an account, take the assessment, and see what the matching suggests. You
               can stop at any point, and nothing is shared until you continue.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/signup" className="btn btn-primary btn-lg">
+              <Link href="/signup" className="btn btn-primary btn-green btn-lg">
                 Create your account
               </Link>
               <Link href="/login" className="btn btn-secondary btn-lg">
@@ -398,21 +398,21 @@ export default function Home() {
                 <p className="text-xs font-semibold text-slate-400">
                   Get started
                 </p>
-                <ul className="mt-2.5 space-y-1.5 text-sm">
+                <ul className="mt-2 space-y-2 text-sm">
                   <li>
-                    <Link href="/signup" className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0">
+                    <Link href="/signup" className="flex min-h-[44px] items-center text-slate-600 transition hover:text-kindred-leaf sm:min-h-0">
                       Create an account
                     </Link>
                   </li>
                   <li>
-                    <Link href="/login" className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0">
+                    <Link href="/login" className="flex min-h-[44px] items-center text-slate-600 transition hover:text-kindred-leaf sm:min-h-0">
                       Log in
                     </Link>
                   </li>
                   <li>
                     <Link
                       href="/login"
-                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-kindred-leaf sm:min-h-0"
                     >
                       Choose a portal
                     </Link>
@@ -424,11 +424,11 @@ export default function Home() {
                 <p className="text-xs font-semibold text-slate-400">
                   For professionals
                 </p>
-                <ul className="mt-2.5 space-y-1.5 text-sm">
+                <ul className="mt-2 space-y-2 text-sm">
                   <li>
                     <Link
                       href={signupPath("supporter")}
-                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-kindred-leaf sm:min-h-0"
                     >
                       Become a supporter
                     </Link>
@@ -436,7 +436,7 @@ export default function Home() {
                   <li>
                     <Link
                       href={signupPath("therapist")}
-                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-kindred-leaf sm:min-h-0"
                     >
                       Join as a therapist
                     </Link>
@@ -444,7 +444,7 @@ export default function Home() {
                   <li>
                     <Link
                       href={signupPath("collaborative_clinic")}
-                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-kindred-leaf sm:min-h-0"
                     >
                       Register a clinic
                     </Link>
@@ -454,7 +454,7 @@ export default function Home() {
             </nav>
           </div>
 
-          <p className="mt-9 border-t border-slate-200 pt-6 text-xs leading-5 text-slate-400">
+          <p className="mt-8 border-t border-slate-200 pt-6 text-xs leading-5 text-slate-400">
             Supporter, therapist, clinical and clinic portals require accepting the ethical
             agreement before sign-up is complete.
           </p>
