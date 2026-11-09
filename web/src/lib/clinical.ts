@@ -75,7 +75,7 @@ export interface MatchedTherapist {
   modalities: string[];
   languages: string[];
   sessionModes: string[];
-  sessionFee: number | null;
+  sessionFee: number;
   currency: string | null;
   yearsExperience: number | null;
   acceptingNewCases: boolean;
@@ -84,12 +84,15 @@ export interface MatchedTherapist {
   availabilityHoursPerWeek: number | null;
   specialties: string[];
   matchedSpecialties: string[];
+  matchedSpecialtyKeys: string[];
   matchedOn: string;
   secondaryOverlap: number;
+  consentedToAiMatching: boolean;
 }
 
 export interface CurrentMatches {
   hasCurrentConcern: boolean;
+  searchId: string | null;
   concern: {
     id: string;
     primaryIssueKey: string | null;

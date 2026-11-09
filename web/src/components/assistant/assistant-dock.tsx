@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MessageCircle } from "lucide-react";
 import { Cubee } from "@/components/cubee";
 import { Button } from "@/components/ui";
 import {
@@ -37,6 +38,7 @@ export function AssistantDock() {
   const path = usePathname();
   const scroller = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const isAuthPage = path?.startsWith("/login") || path?.startsWith("/signup");
 
   // Stay pinned to the newest line. Re-running on `lines` is what makes this
   // follow the conversation rather than only the first message.
@@ -76,7 +78,13 @@ export function AssistantDock() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    <div
+      className={`fixed z-50 flex items-end gap-3 ${
+        isAuthPage
+          ? "top-4 right-4 flex-col-reverse"
+          : "right-4 bottom-4 flex-col sm:right-6 sm:bottom-6"
+      }`}
+    >
       {open ? (
         <section
           aria-label="Kindred Tap assistant"
@@ -203,9 +211,11 @@ export function AssistantDock() {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-label={open ? "Close the assistant" : "Open the assistant"}
-        className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1.5 pl-1.5 pr-4 shadow-md transition hover:border-teal-300 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:hover:border-teal-600"
+        className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1.5 pl-1.5 pr-4 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 dark:hover:bg-slate-800"
       >
-        <Cubee mood={open ? mood : undefined} size={40} label="" />
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+        </span>
         <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
           {open ? "Hide" : "Ask Cube"}
         </span>

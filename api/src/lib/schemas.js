@@ -157,6 +157,8 @@ export const personalitySubmissionSchema = z.object({
 
 export const startConversationSchema = z.object({
   therapistId: z.string().trim().uuid("Choose a therapist from the directory"),
+  /** Which matching search led to this conversation, for audit. */
+  searchId: z.string().trim().uuid().optional(),
 });
 
 export const sendMessageSchema = z.object({

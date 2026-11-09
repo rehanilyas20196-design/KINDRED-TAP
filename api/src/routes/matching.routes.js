@@ -58,7 +58,8 @@ const MATCH_COLUMNS = `
   p.accepting_new_cases                 AS "acceptingNewCases",
   p.registration_verified               AS "registrationVerified",
   p.registration_body                   AS "registrationBody",
-  p.availability_hours_per_week         AS "availabilityHoursPerWeek"
+  p.availability_hours_per_week         AS "availabilityHoursPerWeek",
+  p.consented_to_ai_matching            AS "consentedToAiMatching"
 `;
 
 /**
@@ -113,7 +114,14 @@ export async function findMatches(primaryKey, secondaryKeys = [], userId = null)
                  JOIN issues i ON i.id = ts3.issue_id
                 WHERE ts3.therapist_id = u.id),
               ARRAY[]::text[]
-            ) AS "specialties"
+            ) AS "specialties",
+            COALESCE(
+              (SELECT array_agg(i.key ORDER BY i.position)
+                 FROM therapist_specialties ts3
+                 JOIN issues i ON i.id = ts3.issue_id
+                WHERE ts3.therapist_id = u.id),
+              ARRAY[]::text[]
+            ) AS "specialtyKeys"
        FROM users u
        JOIN therapist_profiles p ON p.user_id = u.id
        JOIN therapist_specialties ts
@@ -133,6 +141,7 @@ export async function findMatches(primaryKey, secondaryKeys = [], userId = null)
   let therapists = rows.map((therapist) => ({
     ...therapist,
     matchedSpecialties: therapist.specialties ?? [],
+    matchedSpecialtyKeys: therapist.specialtyKeys ?? [],
     matchedOn: issue.label,
   }));
 
@@ -141,8 +150,16 @@ export async function findMatches(primaryKey, secondaryKeys = [], userId = null)
       const patientResult = await generatePatientEmbedding(userId);
       if (patientResult.success && patientResult.embedding) {
         const therapistEmbeddings = await getAllTherapistEmbeddings();
+
+        // Only therapists who have consented to AI matching may be
+        // re-ranked by embedding. Everyone else keeps their keyword rank.
+        const consentingIds = new Set(
+          therapists.filter((t) => t.consentedToAiMatching).map((t) => t.id)
+        );
         const embeddingMap = new Map(
-          therapistEmbeddings.map((e) => [e.therapist_id, e.embedding])
+          therapistEmbeddings
+            .filter((e) => consentingIds.has(e.therapist_id))
+            .map((e) => [e.therapist_id, e.embedding])
         );
 
         therapists = therapists.map((t) => {
@@ -153,9 +170,9 @@ export async function findMatches(primaryKey, secondaryKeys = [], userId = null)
 
         // Re-rank: primary filter (specialty match) first, then semantic similarity
         therapists.sort((a, b) => {
-          // Keep therapists with primary specialty match at top
-          const aHasPrimary = a.matchedSpecialties?.includes(issue.label);
-          const bHasPrimary = b.matchedSpecialties?.includes(issue.label);
+          // Keep therapists with primary specialty match at top (compare keys, not labels)
+          const aHasPrimary = a.matchedSpecialtyKeys?.includes(issue.key);
+          const bHasPrimary = b.matchedSpecialtyKeys?.includes(issue.key);
           if (aHasPrimary && !bHasPrimary) return -1;
           if (!aHasPrimary && bHasPrimary) return 1;
 
@@ -298,8 +315,20 @@ matchingRouter.get(
       req.user.id
     );
 
+    // Record this re-run so any conversation started from these results can be
+    // traced back to the match that produced it.
+    const { rows: searchRows } = await query(
+      `INSERT INTO therapist_searches
+         (user_id, concern_id, primary_issue_key, secondary_issues, result_count)
+       VALUES ($1, $2, $3, $4::jsonb, $5)
+       RETURNING id`,
+      [req.user.id, concern.id, concern.primary_issue_key, JSON.stringify(concern.secondary_issues ?? []), therapists.length]
+    );
+    const searchId = searchRows[0].id;
+
     res.json({
       hasCurrentConcern: true,
+      searchId,
       concern: {
         id: concern.id,
         primaryIssueKey: concern.primary_issue_key,

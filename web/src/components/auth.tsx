@@ -6,56 +6,12 @@ import {
   type ComponentPropsWithoutRef,
   type ReactNode,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { PORTALS, type PortalMeta, type Role } from "@/lib/portals";
 import { PortalIcon } from "@/components/portal-icon";
 import { Button, primaryButtonClass as uiPrimaryButtonClass } from "@/components/ui";
 import { Logo } from "@/components/logo";
-import { Cubee } from "@/components/cubee";
-import { FieldCubee } from "@/components/field-cubee";
-import type { FieldState, FormMood } from "@/lib/cubee-form";
-
-/* ------------------------------------------------------------------ */
-/* Brand                                                               */
-/* ------------------------------------------------------------------ */
-
-export function BrandMark({
-  className = "h-9 w-9",
-  variant = "solid",
-}: {
-  className?: string;
-  variant?: "solid" | "onDark";
-}) {
-  const [logoFailed, setLogoFailed] = useState(false);
-
-  if (!logoFailed) {
-    return (
-      <span className={`flex shrink-0 items-center justify-center overflow-hidden ${className}`}>
-        <Image
-          src="/logo-mark.png"
-          alt="Kindred Tap"
-          width={96}
-          height={96}
-          className="h-full w-full object-contain"
-          onError={() => setLogoFailed(true)}
-        />
-      </span>
-    );
-  }
-
-  return (
-    <span
-      className={`flex shrink-0 items-center justify-center rounded-xl ${
-        variant === "onDark" ? "bg-white text-teal-800" : "bg-teal-700 text-white"
-      } ${className}`}
-    >
-      <svg viewBox="0 0 24 24" fill="currentColor" className="h-1/2 w-1/2" aria-hidden="true">
-        <path d="M12 20.4C7.1 16.5 3.6 13.4 3.6 9.8 3.6 7.2 5.7 5.2 8 5.2c1.6 0 3.1.8 4 2.1.9-1.3 2.4-2.1 4-2.1 2.3 0 4.4 2 4.4 4.6 0 3.6-3.5 6.7-8.4 10.6Z" />
-      </svg>
-    </span>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /* Layout                                                              */
@@ -65,12 +21,6 @@ interface AuthLayoutProps {
   mode: "login" | "signup";
   portal: PortalMeta | null;
   onSelectPortal: (key: Role) => void;
-  /**
-   * The form's overall verdict, shown by Cubee in the brand panel. Optional
-   * because only the two forms that track it have one to give; without it he
-   * simply idles, which is the correct default rather than a missing value.
-   */
-  formMood?: FormMood;
   /**
    * Set on `/login/<portal>` and `/signup/<portal>`: this page stays on its
    * own portal, so clicking a different one opens that portal's page.
@@ -83,7 +33,6 @@ export function AuthLayout({
   mode,
   portal,
   onSelectPortal,
-  formMood,
   locked = false,
   children,
 }: AuthLayoutProps) {
@@ -97,130 +46,130 @@ export function AuthLayout({
     onSelectPortal(key);
   };
   return (
-    <div className="min-h-dvh bg-slate-100">
-      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)]">
-        {/* Brand panel — desktop */}
-        <aside className="relative isolate hidden flex-col justify-between gap-10 overflow-hidden bg-teal-900 p-10 text-teal-50 lg:flex">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-teal-600/25 blur-3xl"
-          />
-          <div className="relative flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Logo variant="onDark" className="h-11 w-auto" />
-              <p className="text-xs text-teal-200">Mental health support platform</p>
-            </div>
-            <Cubee mood={formMood} size={88} />
-          </div>
-
-          <div className="relative">
-            <h2 className="text-3xl font-semibold tracking-tight text-white">
-              {mode === "login" ? "Welcome back" : "Create your account"}
+    <div className="auth-shell min-h-dvh bg-slate-50">
+      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col bg-white lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,34rem)]">
+        <aside className="hidden flex-col justify-center border-r border-slate-200 bg-[#f8f6f1] p-8 lg:flex lg:p-10">
+          <div className="mx-auto w-full max-w-xl">
+            <Link href="/" aria-label="Kindred Tap home" className="inline-flex rounded-md">
+              <Logo className="h-12 w-auto" />
+            </Link>
+            <h2 className="mt-10 max-w-lg text-3xl font-medium leading-tight tracking-tight text-slate-900">
+              {mode === "login"
+                ? "A separate workspace for every role in care"
+                : "Choose the care space that fits your role"}
             </h2>
-            <p className="mt-3 max-w-md text-sm leading-6 text-teal-100/80">
-              {locked
-                ? `Every portal has its own account. This page only signs you in to the ${
-                    portal?.portal ?? "selected portal"
-                  }.`
-                : "Choose where you work and the platform signs you in to that portal's account."}
+            <p className="mt-4 max-w-md text-sm leading-6 text-slate-600">
+              {mode === "login"
+                ? locked
+                  ? `Every portal has its own account. This page is for the ${
+                      portal?.portal ?? "selected portal"
+                    }.`
+                  : "Choose the portal that matches your role. Each one has its own account and workspace."
+                : "Each portal has a separate account and workspace. Professional portals include an ethical agreement as part of signup."}
             </p>
 
-            <p className="mt-8 text-xs font-semibold uppercase tracking-[0.12em] text-teal-300">
-              {locked ? "Portals" : "Your portal"}
-            </p>
-            <div className="mt-3 grid gap-1.5" role="radiogroup" aria-label="Portal">
-              {PORTALS.map((item) => {
-                const active = portal?.key === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => pickPortal(item.key)}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
-                      active
-                        ? "bg-white/15 ring-1 ring-inset ring-teal-200/40"
-                        : "hover:bg-white/[0.07]"
-                    }`}
-                  >
-                    <PortalIcon
-                      role={item.key}
-                      className={`h-5 w-5 ${active ? "text-teal-100" : "text-teal-300"}`}
-                    />
-                    <span className="flex-1 font-medium text-white">{item.portal}</span>
-                    {item.requiresEthics ? (
-                      <span className="rounded-full bg-teal-300/15 px-2 py-0.5 text-[10px] font-medium text-teal-100">
-                        Ethics agreement
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="relative rounded-2xl bg-white/[0.07] p-5 ring-1 ring-inset ring-white/10">
-            {portal ? (
+            {mode === "login" ? (
               <>
-                <p className="text-sm font-semibold text-white">{portal.tagline}</p>
-                <p className="mt-1 text-xs leading-5 text-teal-100/80">{portal.description}</p>
-                <ol className="mt-4 space-y-2">
-                  {portal.journey.map((step, index) => (
-                    <li key={step} className="flex items-start gap-2.5 text-xs text-teal-100/90">
-                      <span className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-teal-300/20 text-[9px] font-semibold text-teal-100">
-                        {index + 1}
-                      </span>
-                      {step}
-                    </li>
-                  ))}
-                </ol>
+                <p className="mt-8 text-xs font-medium text-slate-500">
+                  {locked ? "Portals" : "Your portal"}
+                </p>
+                <div
+                  className="mt-2 grid gap-1 border-y border-slate-200 py-2"
+                  role="radiogroup"
+                  aria-label="Portal"
+                >
+        {PORTALS.filter((item) => item.key !== "clinical_supervisor").map((item) => {
+                    const active = portal?.key === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => pickPortal(item.key)}
+                        className={`flex min-h-10 items-center gap-3 border-l-2 px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 auth-focus ${
+                          active
+                            ? "border-transparent auth-accent-selected"
+                            : "border-transparent text-slate-600 hover:bg-white"
+                        }`}
+                      >
+                        <PortalIcon
+                          role={item.key}
+                          className={`h-4 w-4 ${active ? "auth-accent" : "text-slate-500"}`}
+                        />
+                        <span className="flex-1 font-medium">{item.portal}</span>
+                        {item.requiresEthics ? (
+                          <span className="text-xs text-slate-500">Ethics agreement</span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+                {portal ? (
+                  <div className="mt-6 border-t border-slate-200 pt-5">
+                    <p className="text-sm font-medium text-slate-900">{portal.tagline}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{portal.description}</p>
+                    <ol className="mt-4 space-y-2">
+                      {portal.journey.map((step, index) => (
+                        <li key={step} className="flex items-start gap-3 text-sm text-slate-600">
+                          <span className="w-5 shrink-0 font-mono text-xs tabular-nums auth-accent">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
               </>
-            ) : (
-              <p className="text-sm text-teal-100/80">
-                Select a portal to preview the journey it follows.
-              </p>
-            )}
+            ) : null}
           </div>
         </aside>
 
         {/* Form column */}
-        <main className="flex flex-1 flex-col justify-center px-5 py-8 sm:px-10 lg:px-12">
-          <div className="lg:hidden">
-            <div className="flex items-center gap-2.5">
-              <Logo className="h-9 w-auto" />
+        <main className="flex flex-1 flex-col justify-center px-5 py-8 sm:px-8 lg:px-12">
+          {mode === "login" ? (
+            <div className="w-full max-w-lg lg:hidden">
+              <Link href="/" aria-label="Kindred Tap home" className="inline-flex rounded-md">
+                <Logo className="h-11 w-auto" />
+              </Link>
+              <p className="mt-3 text-sm text-slate-600">
+                {locked && portal
+                  ? `Sign in to the ${portal.portal}.`
+                  : portal?.tagline ?? "Choose your portal to get started."}
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Portal">
+                {PORTALS.map((item) => {
+                  const active = portal?.key === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => pickPortal(item.key)}
+                      className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 auth-focus sm:text-sm ${
+                        active
+                          ? "auth-accent-fill"
+                          : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <PortalIcon role={item.key} className="h-4 w-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="no-scrollbar -mx-1 mt-4 flex gap-1.5 overflow-x-auto px-1 pb-1">
-              {PORTALS.map((item) => {
-                const active = portal?.key === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => pickPortal(item.key)}
-                    className={`flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      active
-                        ? "border-teal-700 bg-teal-700 text-white"
-                        : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
-                    }`}
-                  >
-                    <PortalIcon role={item.key} className="h-3.5 w-3.5" />
-                    {item.label}
-                  </button>
-                );
-              })}
+          ) : (
+            <div className="lg:hidden">
+              <Link href="/" aria-label="Kindred Tap home" className="inline-flex rounded-md">
+                <Logo className="h-11 w-auto" />
+              </Link>
             </div>
-            <p className="mt-3 text-xs text-slate-500">
-              {locked && portal
-                ? `This page signs you in to the ${portal.portal}.`
-                : portal
-                  ? portal.tagline
-                  : "Choose your portal to get started."}
-            </p>
-          </div>
+          )}
 
-          <div className="mt-6 w-full max-w-md lg:mt-0">{children}</div>
+          <div className="mt-6 w-full max-w-lg lg:mt-0">{children}</div>
         </main>
       </div>
     </div>
@@ -228,7 +177,7 @@ export function AuthLayout({
 }
 
 export function AuthCard({ children }: { children: ReactNode }) {
-  return <div className="card p-6 sm:p-8">{children}</div>;
+  return <div className="card rounded-xl p-6 shadow-none sm:p-8">{children}</div>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -241,8 +190,6 @@ interface FieldProps extends Omit<ComponentPropsWithoutRef<"input">, "className"
   label: string;
   error?: string;
   hint?: string;
-  /** Live validity for Cubee. The form owns the value; this only reports shape. */
-  cubee?: FieldState;
 }
 
 function FieldShell({
@@ -250,26 +197,20 @@ function FieldShell({
   label,
   error,
   hint,
-  cubee,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
   hint?: string;
-  cubee?: FieldState;
   children: ReactNode;
 }) {
   const note = error ?? hint;
   return (
     <div>
-      {cubee ? (
-        <FieldCubee id={id} label={label} state={cubee} />
-      ) : (
-        <label htmlFor={id} className="field-label">
-          {label}
-        </label>
-      )}
+      <label htmlFor={id} className="field-label">
+        {label}
+      </label>
       {children}
       {note ? (
         <p
@@ -287,11 +228,11 @@ function FieldShell({
   );
 }
 
-export function TextField({ label, error, hint, id, cubee, ...inputProps }: FieldProps) {
+export function TextField({ label, error, hint, id, ...inputProps }: FieldProps) {
   const autoId = useId();
   const fieldId = id ?? autoId;
   return (
-    <FieldShell id={fieldId} label={label} error={error} hint={hint} cubee={cubee}>
+    <FieldShell id={fieldId} label={label} error={error} hint={hint}>
       <input
         id={fieldId}
         {...inputProps}
@@ -308,7 +249,6 @@ export function PasswordField({
   error,
   hint,
   id,
-  cubee,
   ...inputProps
 }: FieldProps) {
   const autoId = useId();
@@ -316,7 +256,7 @@ export function PasswordField({
   const [visible, setVisible] = useState(false);
 
   return (
-    <FieldShell id={fieldId} label={label} error={error} hint={hint} cubee={cubee}>
+    <FieldShell id={fieldId} label={label} error={error} hint={hint}>
       <div className="relative">
         <input
           id={fieldId}
@@ -330,7 +270,7 @@ export function PasswordField({
           type="button"
           onClick={() => setVisible((value) => !value)}
           aria-label={visible ? "Hide password" : "Show password"}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-slate-500 transition hover:text-slate-600 dark:hover:text-slate-200"
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-slate-500 transition-colors hover:text-slate-700 dark:hover:text-slate-200"
         >
           {visible ? (
             <svg
@@ -569,8 +509,13 @@ export function PortalPicker({
 }) {
   return (
     <div>
-      <p className="field-label">Which portal are you joining?</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Portal">
+      <p className="field-label">Choose a portal</p>
+      <div
+        className="grid grid-cols-2 gap-2"
+        role="radiogroup"
+        aria-label="Portal"
+        aria-invalid={error ? true : undefined}
+      >
         {PORTALS.map((item) => {
           const active = value?.key === item.key;
           return (
@@ -580,21 +525,24 @@ export function PortalPicker({
               role="radio"
               aria-checked={active}
               onClick={() => onChange(item)}
-              className={`flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 text-center text-xs transition ${
+              className={`auth-focus flex min-h-14 items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${
                 active
-                  ? "border-2 border-teal-700 bg-teal-50 font-semibold text-teal-800 dark:border-teal-500 dark:bg-teal-500/10 dark:text-teal-200"
-                  : "border border-slate-200 bg-white font-medium text-slate-600 hover:border-teal-400 hover:text-teal-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400 dark:hover:border-teal-500 dark:hover:text-teal-300"
+                  ? "auth-accent-selected font-medium"
+                  : "border-slate-200 bg-white font-medium text-slate-600 hover:border-slate-400"
               }`}
             >
-              <PortalIcon role={item.key} className="h-5 w-5" />
-              {item.label}
+              <PortalIcon
+                role={item.key}
+                className={`h-4 w-4 shrink-0 ${active ? "auth-accent" : "text-slate-500"}`}
+              />
+              <span className="leading-5">{item.portal}</span>
             </button>
           );
         })}
       </div>
       {value ? (
-        <p className="mt-2 rounded-xl bg-slate-50 px-3.5 py-2.5 text-xs leading-5 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-          <span className="font-medium text-slate-700 dark:text-slate-300">{value.portal}.</span>{" "}
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          <span className="font-medium text-slate-700">{value.portal}.</span>{" "}
           {value.description}
           {value.requiresEthics ? " Requires the professional ethical agreement." : ""}
         </p>

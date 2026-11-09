@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { PortalIcon } from "@/components/portal-icon";
-import { BrandMark } from "@/components/auth";
+import { Logo } from "@/components/logo";
 import { apiFetch, clearSession, type AuthUser } from "@/lib/api";
 import type { PortalMeta } from "@/lib/portals";
 import { Icon } from "@/components/icons";
@@ -78,14 +78,11 @@ export function DashboardHeader({ portal, user }: { portal: PortalMeta; user: Au
       <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link
           href={`/portal/${portal.key}`}
-          className="flex min-w-0 items-center gap-2.5 rounded-lg"
+          className="flex min-w-0 items-center gap-3 rounded-lg"
         >
-          <BrandMark className="h-8 w-8" />
-          <span className="min-w-0 leading-tight">
-            <span className="block truncate text-sm font-semibold tracking-tight text-slate-900">
-              {portal.portal}
-            </span>
-            <span className="block truncate text-[11px] text-slate-500">Kindred Tap</span>
+          <Logo className="h-9 w-auto" />
+          <span className="min-w-0 truncate text-sm font-medium text-slate-700">
+            {portal.portal}
           </span>
         </Link>
 

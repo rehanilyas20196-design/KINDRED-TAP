@@ -124,18 +124,17 @@ export function cosineSimilarity(a, b) {
 
 /**
  * Orders therapists best-first against a patient vector. Therapists without a
- * usable vector are dropped rather than scored 0: a missing vector is not
- * evidence of a bad match, it is evidence of nothing.
+ * usable vector score 0 rather than being dropped: a missing vector is not
+ * evidence of a bad match, and keyword matches should still surface.
  */
 export function rankTherapists(patientEmbedding, therapists) {
   return therapists
     .map((therapist) => {
       const embedding = parseEmbedding(therapist.embedding);
-      if (!embedding) return null;
-
-      return { ...therapist, matchScore: cosineSimilarity(patientEmbedding, embedding) };
+      const matchScore = embedding ? cosineSimilarity(patientEmbedding, embedding) : 0;
+      return { ...therapist, matchScore: Number(matchScore.toFixed(4)) };
     })
-    .filter((therapist) => therapist !== null && Number.isFinite(therapist.matchScore))
+    .filter((therapist) => Number.isFinite(therapist.matchScore))
     .sort((a, b) => b.matchScore - a.matchScore);
 }
 

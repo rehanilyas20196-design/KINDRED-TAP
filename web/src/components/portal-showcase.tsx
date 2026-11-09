@@ -61,10 +61,10 @@ const ROLE_THEMES: Record<Role, RoleTheme> = {
 };
 
 const CATEGORIES: { id: CategoryFilter; label: string; count: number }[] = [
-  { id: "all", label: "All Portals", count: 6 },
+  { id: "all", label: "All Portals", count: 5 },
   { id: "individuals", label: "Individuals", count: 1 },
   { id: "care", label: "Therapists & Peers", count: 2 },
-  { id: "oversight", label: "Clinical Oversight", count: 2 },
+  { id: "oversight", label: "Clinical Oversight", count: 1 },
   { id: "clinic", label: "Partner Clinics", count: 1 },
 ];
 
@@ -73,7 +73,9 @@ export function PortalShowcase() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredPortals = useMemo(() => {
-    return PORTALS.filter((portal) => {
+    return PORTALS.filter(
+      (portal) => portal.key !== "clinical_supervisor",
+    ).filter((portal) => {
       const theme = ROLE_THEMES[portal.key];
       const matchesCategory =
         activeCategory === "all" || theme.category === activeCategory;

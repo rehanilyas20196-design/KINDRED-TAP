@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { createAvatar, type AvatarController } from "@bible-strong/avatar-react";
 
-import cubeeDefinition from "@/data/cubee.avatar.json";
+import cloudeeDefinition from "@/data/cloudee.avatar.json";
 
 /**
  * Cubee, the platform mascot.
@@ -22,7 +22,7 @@ import cubeeDefinition from "@/data/cubee.avatar.json";
  *   pointer, because a face that answers the conversation is more useful than
  *   one that also twitches when the cursor passes over it.
  */
-const CubeeDefinition = createAvatar(cubeeDefinition);
+const CubeeDefinition = createAvatar(cloudeeDefinition);
 
 /**
  * The states callers may drive Cubee into.

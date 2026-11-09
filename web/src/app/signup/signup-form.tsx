@@ -20,15 +20,6 @@ import {
   type Role,
 } from "@/lib/portals";
 import { useSessionGate } from "@/lib/session-gate";
-import { useCubeeForm } from "@/hooks/use-cubee-form";
-import {
-  confirmState,
-  emailState,
-  nameState,
-  newPasswordState,
-  withError,
-  type FieldState,
-} from "@/lib/cubee-form";
 import {
   AuthCard,
   AuthLayout,
@@ -62,35 +53,9 @@ export default function SignupForm({
   const [banner, setBanner] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
-  const [accepted, setAccepted] = useState<boolean | undefined>(undefined);
   const router = useRouter();
   const { state: gate, signOut } = useSessionGate(portal?.key ?? "user");
 
-  // The live twins of `validate` below, with the form's own errors folded in -
-  // optimistic on purpose, so a field reads as right as soon as its own shape
-  // is rather than waiting for the whole form. They are also permissive: only
-  // `validate` can decide whether the form submits, so none of this can allow
-  // one. Where they disagree, the field's error wins.
-  const fields: Record<string, FieldState> = {
-    fullName: withError(nameState(fullName), errors.fullName),
-    email: withError(emailState(email), errors.email),
-    password: withError(newPasswordState(password), errors.password),
-    confirmPassword: withError(confirmState(confirmPassword, password), errors.confirmPassword),
-  };
-
-  const { mood } = useCubeeForm(fields, accepted);
-
-  /** Any edit retires the last outcome - a reaction must never outlive its cause. */
-  function resetOutcome() {
-    if (accepted !== undefined) setAccepted(undefined);
-  }
-
-  /**
-   * Retires a field's error as soon as it is edited. Without this a password
-   * the server rejected would keep Cubee angry while it was being fixed, and
-   * the field's own live state - which says the shape is right again - would
-   * be overruled by a verdict on text that no longer exists.
-   */
   function clearFieldError(key: string) {
     setErrors((current) => {
       if (!(key in current)) return current;
@@ -145,12 +110,10 @@ export default function SignupForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setAccepted(undefined);
 
     const nextErrors = validate();
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !portal) {
-      setAccepted(false);
       return;
     }
 
@@ -171,17 +134,14 @@ export default function SignupForm({
       if (data.user.role !== portal.key) {
         clearSession();
         setBanner(`That account was created for a different portal. Sign up for the ${portal.portal} instead.`);
-        setAccepted(false);
         return;
       }
 
       saveSession(data.token);
-      setAccepted(true);
       setResult(data);
     } catch (error) {
       setBanner(messageFor(error));
       setErrors(toFieldErrors(error));
-      setAccepted(false);
     } finally {
       setPending(false);
     }
@@ -194,7 +154,6 @@ export default function SignupForm({
       mode="signup"
       portal={portal}
       onSelectPortal={selectPortalByRole}
-      formMood={mood}
       locked={locked}
     >
       {result ? (
@@ -243,15 +202,25 @@ export default function SignupForm({
         <AuthCard>
           <header>
             <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
-              {portal ? `Join the ${portal.portal}` : "Create your account"}
+              {portal ? `Create your ${portal.portal} account` : "Create your account"}
             </h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {portal ? portal.tagline : "Choose your portal and we will set everything up."}
+              {portal ? portal.tagline : "Choose your portal before entering your details."}
             </p>
           </header>
 
           <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
             {banner ? <FormAlert>{banner}</FormAlert> : null}
+
+            {locked && portal ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                Creating a <span className="font-semibold text-slate-900">{portal.portal}</span>{" "}
+                account.
+                {portal.requiresEthics ? " The ethical agreement applies." : ""}
+              </div>
+            ) : (
+              <PortalPicker value={portal} onChange={selectPortal} error={errors.role} />
+            )}
 
             <TextField
               label="Full name"
@@ -262,10 +231,8 @@ export default function SignupForm({
               onChange={(event) => {
                 setFullName(event.target.value);
                 clearFieldError("fullName");
-                resetOutcome();
               }}
               error={errors.fullName}
-              cubee={fields.fullName}
               required
             />
 
@@ -278,10 +245,8 @@ export default function SignupForm({
               onChange={(event) => {
                 setEmail(event.target.value);
                 clearFieldError("email");
-                resetOutcome();
               }}
               error={errors.email}
-              cubee={fields.email}
               required
             />
 
@@ -293,10 +258,8 @@ export default function SignupForm({
               onChange={(event) => {
                 setPassword(event.target.value);
                 clearFieldError("password");
-                resetOutcome();
               }}
               error={errors.password}
-              cubee={fields.password}
               hint="At least 8 characters, including a letter and a number."
               required
             />
@@ -309,21 +272,10 @@ export default function SignupForm({
               onChange={(event) => {
                 setConfirmPassword(event.target.value);
                 clearFieldError("confirmPassword");
-                resetOutcome();
               }}
               error={errors.confirmPassword}
-              cubee={fields.confirmPassword}
               required
             />
-
-            {locked && portal ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-                Creating a <span className="font-semibold">{portal.portal}</span> account.
-                {portal.requiresEthics ? " The ethical agreement applies." : ""}
-              </div>
-            ) : (
-              <PortalPicker value={portal} onChange={selectPortal} error={errors.role} />
-            )}
 
             <Checkbox
               checked={termsAccepted}
@@ -350,7 +302,7 @@ export default function SignupForm({
             {portal ? `Already have a ${portal.portal} account?` : "Already have an account?"}{" "}
             <Link
               href={loginPath(portal?.key)}
-              className="font-semibold text-teal-700 hover:underline dark:text-teal-300"
+              className="auth-link font-semibold hover:underline"
             >
               Sign in
             </Link>

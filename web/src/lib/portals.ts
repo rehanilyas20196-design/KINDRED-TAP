@@ -12,7 +12,8 @@ export type Role =
   | "therapist"
   | "clinical_advisor"
   | "clinical_supervisor"
-  | "collaborative_clinic";
+  | "collaborative_clinic"
+  | "admin";
 
 export interface PortalMeta {
   key: Role;
@@ -113,6 +114,16 @@ export const PORTALS: PortalMeta[] = [
       "Manage partnerships",
     ],
     requiresEthics: true,
+  },
+  {
+    key: "admin",
+    label: "Admin",
+    portal: "Admin Portal",
+    tagline: "Platform administration",
+    description:
+      "Review and approve accounts, manage users and oversee the knowledge base.",
+    journey: ["Sign in", "Review accounts", "Manage platform"],
+    requiresEthics: false,
   },
 ];
 

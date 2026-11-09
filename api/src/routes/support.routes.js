@@ -171,7 +171,7 @@ supportRouter.post(
       throw forbidden("Only people seeking support can start a conversation");
     }
 
-    const { therapistId } = parse(startConversationSchema, req.body);
+    const { therapistId, searchId } = parse(startConversationSchema, req.body);
     if (therapistId === req.user.id) {
       throw badRequest("You cannot start a conversation with yourself");
     }
@@ -192,11 +192,11 @@ supportRouter.post(
       // The unique constraint on (user_id, therapist_id) is what makes a
       // double tap on "Message" safe.
       const inserted = await tx.query(
-        `INSERT INTO conversations (user_id, therapist_id)
-         VALUES ($1, $2)
+        `INSERT INTO conversations (user_id, therapist_id, therapist_search_id)
+         VALUES ($1, $2, $3)
          ON CONFLICT (user_id, therapist_id) DO NOTHING
          RETURNING id`,
-        [req.user.id, therapistId]
+        [req.user.id, therapistId, searchId ?? null]
       );
       if (inserted.rows[0]) return { id: inserted.rows[0].id };
 

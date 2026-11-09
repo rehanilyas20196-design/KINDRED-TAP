@@ -1,24 +1,13 @@
 import Image from "next/image";
 
-/**
- * Full "KINDRED TAP" lockup with transparent background.
- * Use `variant="onDark"` on dark surfaces (the black wordmark flips to white).
- */
-export function Logo({
-  className = "h-9 w-auto",
-  variant = "solid",
-}: {
-  className?: string;
-  variant?: "solid" | "onDark";
-}) {
+export function Logo({ className = "h-10 w-auto" }: { className?: string }) {
   return (
     <Image
-      src={variant === "onDark" ? "/logo-light.png" : "/logo.png"}
+      src="/herbal-therapy-logo.png"
       alt="Kindred Tap"
-      width={1024}
-      height={678}
-      unoptimized
-      className={`shrink-0 ${className}`}
+      width={1054}
+      height={702}
+      className={`block shrink-0 object-contain ${className}`}
     />
   );
 }

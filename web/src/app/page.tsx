@@ -4,7 +4,6 @@ import { PortalIcon } from "@/components/portal-icon";
 import { Logo } from "@/components/logo";
 import { Icon } from "@/components/icons";
 import type { IconName } from "@/components/icons";
-import BlurText from "@/components/BlurText";
 import { HeroScene } from "@/components/hero-visual";
 
 const TRUST = [
@@ -74,14 +73,7 @@ function CheckIcon() {
 export default function Home() {
   return (
     <div className="relative min-h-dvh overflow-x-clip bg-slate-100">
-      {/* One restrained wash behind the hero — a tint, not a gradient for
-          its own sake. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(120%_80%_at_50%_-10%,var(--color-teal-50)_0%,transparent_70%)]"
-      />
-
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
         <div className="mx-auto w-full max-w-6xl px-5 sm:px-8">
           <div className="flex items-center justify-between gap-3 py-3 sm:gap-4">
             <Link href="/" className="flex shrink-0 items-center rounded-lg">
@@ -110,7 +102,10 @@ export default function Home() {
             </nav>
 
             <div className="flex shrink-0 items-center gap-2">
-              <Link href="/login" className="btn btn-ghost btn-sm whitespace-nowrap">
+              <Link
+                href="/login"
+                className="whitespace-nowrap px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+              >
                 Log in
               </Link>
               <Link href="/signup" className="btn btn-primary btn-sm whitespace-nowrap">
@@ -152,24 +147,23 @@ export default function Home() {
         <section className="mx-auto w-full max-w-6xl px-5 pb-16 pt-12 sm:px-8 sm:pb-24 sm:pt-20">
           <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
             <div>
-              <p className="eyebrow reveal reveal-nav" data-delay="0.05">
+              <p
+                className="eyebrow text-xs font-medium normal-case tracking-normal"
+              >
                 Mental health support platform
               </p>
               <h1
-                className="reveal reveal-up mt-4 max-w-xl text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl sm:leading-[1.07] lg:text-[3.4rem]"
-                data-delay="0.1"
+                className="mt-4 max-w-xl text-4xl font-medium tracking-tight text-slate-900 sm:text-5xl sm:leading-[1.07] lg:text-[3.4rem]"
               >
-                Care that is organised around the people who give it.
+                Mental health support with a workspace for every role
               </h1>
-              <BlurText
-                text="Six portals, one per role. People seeking support, peer supporters, therapists, clinical advisors, supervisors and partner clinics each sign in to their own workspace — so the right people see the right things, and nobody else does."
-                className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg"
-                animationFrom={{ filter: "blur(6px)", opacity: 0, y: 10 }}
-                delay={26}
-                stepDuration={0.3}
-              />
+              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+                Six portals, one per role. People seeking support, peer supporters, therapists,
+                clinical advisors, supervisors and partner clinics each sign in to their own
+                workspace — so the right people see the right things, and nobody else does.
+              </p>
 
-              <div className="reveal reveal-up mt-8 flex flex-wrap items-center gap-3" data-delay="0.26">
+              <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link href="/signup" className="btn btn-primary btn-lg">
                   Create your account
                 </Link>
@@ -179,8 +173,7 @@ export default function Home() {
               </div>
 
               <ul
-                className="reveal reveal-up mt-9 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-medium text-slate-500"
-                data-delay="0.34"
+                className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-medium text-slate-500"
               >
                 {TRUST.map((item) => (
                   <li key={item} className="inline-flex items-center gap-2">
@@ -192,8 +185,8 @@ export default function Home() {
             </div>
 
             {/* Interactive 3D session room — the reference scene, kept. */}
-            <div className="reveal reveal-right" data-delay="0.2">
-              <div className="card p-4 shadow-sm sm:p-5">
+            <div>
+              <div className="card rounded-xl p-4 shadow-none sm:p-5">
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-white sm:aspect-[3/2]">
                   <HeroScene className="absolute inset-0 h-full w-full" />
                 </div>
@@ -211,14 +204,16 @@ export default function Home() {
           className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:py-20 md:scroll-mt-24"
         >
           <div className="max-w-2xl">
-            <p className="eyebrow reveal reveal-nav">How it works</p>
+            <p className="eyebrow text-xs font-medium normal-case tracking-normal">
+              How it works
+            </p>
             <h2
               id="how-heading"
-              className="reveal reveal-up mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+              className="mt-3 text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl"
             >
               Three steps, and none of them ask you to know the right word.
             </h2>
-            <p className="reveal reveal-up mt-3 text-sm leading-6 text-slate-600 sm:text-base" data-delay="0.08">
+            <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
               The assessment is written for a person having a hard week, not for a clinician
               filling in a form. Everything that follows is built from what you actually said.
             </p>
@@ -228,8 +223,7 @@ export default function Home() {
             {STEPS.map((step, index) => (
               <li
                 key={step.title}
-                className="card reveal reveal-up p-6"
-                data-delay={`${index * 0.08}`}
+                className="card p-6"
               >
                 <span className="text-xs font-semibold tabular-nums text-teal-700">
                   Step {index + 1}
@@ -251,26 +245,27 @@ export default function Home() {
         >
           <div className="flex flex-wrap items-end justify-between gap-4 border-t border-slate-200 pt-10">
             <div className="max-w-2xl">
-              <p className="eyebrow reveal reveal-nav">Choose your portal</p>
+              <p className="eyebrow text-xs font-medium normal-case tracking-normal">
+                Choose your portal
+              </p>
               <h2
                 id="portals-heading"
-                className="reveal reveal-up mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+                className="mt-3 text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl"
               >
                 Every role works from its own account and its own workspace.
               </h2>
             </div>
-            <p className="reveal reveal-up max-w-xs text-sm leading-6 text-slate-500" data-delay="0.08">
+            <p className="max-w-xs text-sm leading-6 text-slate-500">
               Pick the door that matches what you do here. You can hold only the account you
               signed up for.
             </p>
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {PORTALS.map((portal, index) => (
+            {PORTALS.filter((portal) => portal.key !== "clinical_supervisor").map((portal) => (
               <article
                 key={portal.key}
-                className="card card-interactive reveal reveal-up flex flex-col p-5 sm:p-6"
-                data-delay={`${(index % 3) * 0.07}`}
+                className="card flex flex-col p-5 transition-colors hover:border-slate-400 sm:p-6"
               >
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-100">
@@ -319,21 +314,22 @@ export default function Home() {
           className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:py-20 md:scroll-mt-24"
         >
           <div className="max-w-2xl">
-            <p className="eyebrow reveal reveal-nav">Our principles</p>
+            <p className="eyebrow text-xs font-medium normal-case tracking-normal">
+              Our principles
+            </p>
             <h2
               id="principles-heading"
-              className="reveal reveal-up mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+              className="mt-3 text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl"
             >
               The rules the product is built to keep.
             </h2>
           </div>
 
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-            {PRINCIPLES.map((item, index) => (
+            {PRINCIPLES.map((item) => (
               <li
                 key={item.title}
-                className="card reveal reveal-up flex gap-4 p-6"
-                data-delay={`${(index % 2) * 0.08}`}
+                className="card flex gap-4 p-6"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-teal-700 ring-1 ring-inset ring-slate-200">
                   <Icon name={item.icon} className="h-5 w-5" />
@@ -351,8 +347,8 @@ export default function Home() {
         {/* Closing call to action                                            */}
         {/* ---------------------------------------------------------------- */}
         <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8 sm:pb-24">
-          <div className="card reveal reveal-up overflow-hidden p-8 text-center sm:p-12">
-            <h2 className="mx-auto max-w-2xl text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+          <div className="card overflow-hidden p-8 text-center sm:p-12">
+            <h2 className="mx-auto max-w-2xl text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl">
               Start where you actually are.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
@@ -384,7 +380,7 @@ export default function Home() {
 
             <nav aria-label="Footer" className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-xs font-semibold text-slate-400">
                   Get started
                 </p>
                 <ul className="mt-2.5 space-y-1.5 text-sm">
@@ -410,7 +406,7 @@ export default function Home() {
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-xs font-semibold text-slate-400">
                   For professionals
                 </p>
                 <ul className="mt-2.5 space-y-1.5 text-sm">

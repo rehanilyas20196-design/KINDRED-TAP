@@ -194,7 +194,7 @@ export default function MatchResults() {
     try {
       const created = await apiFetch<{ conversationId: string }>("/api/support/conversations", {
         method: "POST",
-        body: { therapistId: therapist.id },
+        body: { therapistId: therapist.id, searchId: data?.searchId ?? undefined },
       });
       router.push(`/portal/user/messages/${created.conversationId}`);
     } catch (err) {

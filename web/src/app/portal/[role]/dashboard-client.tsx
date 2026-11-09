@@ -425,6 +425,42 @@ function ClinicDashboard({ user, portal }: { user: AuthUser; portal: PortalMeta 
   return <ClinicHome user={user} portal={portal} />;
 }
 
+function AdminDashboard({ portal }: { user: AuthUser; portal: PortalMeta }) {
+  return (
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-t border-slate-200 pt-10">
+        <div className="max-w-2xl">
+          <p className="eyebrow text-xs font-medium normal-case tracking-normal">
+            Admin Portal
+          </p>
+          <h2 className="mt-3 text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl">
+            Platform administration
+          </h2>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/admin"
+          className="card card-interactive p-6 transition-colors hover:border-slate-400 sm:p-8"
+        >
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-100">
+              <Icon name="shield" className="h-6 w-6" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-slate-900">Admin review panel</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Approve accounts, manage users and oversee the knowledge base.
+              </p>
+            </div>
+          </div>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Router                                                              */
 /* ------------------------------------------------------------------ */
@@ -436,6 +472,7 @@ const DASHBOARDS: Record<string, (props: { user: AuthUser; portal: PortalMeta })
   clinical_advisor: AdvisorDashboard,
   clinical_supervisor: SupervisorDashboard,
   collaborative_clinic: ClinicDashboard,
+  admin: AdminDashboard,
 };
 
 export default function PortalDashboardClient({ role }: { role: string }) {

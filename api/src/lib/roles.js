@@ -13,6 +13,7 @@ export const ROLES = [
   "clinical_advisor",
   "clinical_supervisor",
   "collaborative_clinic",
+  "admin",
 ];
 
 export const ROLE_TABLES = {
@@ -22,6 +23,7 @@ export const ROLE_TABLES = {
   clinical_advisor: "clinical_advisor_profiles",
   clinical_supervisor: "clinical_supervisor_profiles",
   collaborative_clinic: "collaborative_clinic_profiles",
+  admin: "admin_profiles",
 };
 
 export const ROLE_LABELS = {
@@ -31,6 +33,7 @@ export const ROLE_LABELS = {
   clinical_advisor: "Clinical Advisor",
   clinical_supervisor: "Clinical Supervisor",
   collaborative_clinic: "Collaborative Clinic",
+  admin: "Admin",
 };
 
 /** Short portal name used in the top bar and page titles. */
@@ -41,6 +44,7 @@ export const ROLE_PORTAL_NAMES = {
   clinical_advisor: "Clinical Advisor Portal",
   clinical_supervisor: "Clinical Supervisor Portal",
   collaborative_clinic: "Collaborative Clinic Portal",
+  admin: "Admin Portal",
 };
 
 /** The journey each portal is built around. Drives the dashboard roadmap. */
@@ -80,6 +84,7 @@ export const ROLE_JOURNEYS = {
     "Track commission",
     "Manage partnerships",
   ],
+  admin: ["Sign in", "Review accounts", "Manage platform"],
 };
 
 /** Professionals must accept the code of conduct; members of the public must not. */
@@ -90,6 +95,7 @@ export const ROLE_REQUIRES_ETHICS = {
   clinical_advisor: true,
   clinical_supervisor: true,
   collaborative_clinic: true,
+  admin: false,
 };
 
 /**
@@ -105,6 +111,7 @@ export const ROLE_REQUIRES_ADMIN_APPROVAL = {
   clinical_advisor: true,
   clinical_supervisor: true,
   collaborative_clinic: true,
+  admin: false,
 };
 
 /** Role keys in `ROLE_REQUIRES_ADMIN_APPROVAL` that evaluate to true. */
@@ -148,6 +155,11 @@ const ROLE_COPY = {
     description:
       "Send and receive referrals, promote your services and track clients and commission.",
     icon: "building",
+  },
+  admin: {
+    tagline: "Platform administration",
+    description: "Review and approve accounts, manage users and oversee the knowledge base.",
+    icon: "shield",
   },
 };
 
