@@ -46,9 +46,9 @@ export const CLINIC_NAV: ClinicNavGroup[] = [
   {
     label: "Referrals",
     items: [
-      { href: `${clinicRoot}/referrals/received`, label: "Received Referrals", icon: "sessions" },
-      { href: `${clinicRoot}/referrals/sent`, label: "Sent Referrals", icon: "arrowRight" },
-      { href: `${clinicRoot}/referrals/history`, label: "Referral History", icon: "clock" },
+      { href: `${clinicRoot}/referrals/received`, label: "Received referrals", icon: "sessions" },
+      { href: `${clinicRoot}/referrals/sent`, label: "Sent referrals", icon: "arrowRight" },
+      { href: `${clinicRoot}/referrals/history`, label: "Referral history", icon: "clock" },
     ],
   },
   {
@@ -58,9 +58,9 @@ export const CLINIC_NAV: ClinicNavGroup[] = [
   {
     label: "Services",
     items: [
-      { href: `${clinicRoot}/services`, label: "Available Services", icon: "plans" },
-      { href: `${clinicRoot}/promote`, label: "Promote Services", icon: "reports" },
-      { href: `${clinicRoot}/promote/materials`, label: "Marketing Materials", icon: "audit" },
+      { href: `${clinicRoot}/services`, label: "Available services", icon: "plans" },
+      { href: `${clinicRoot}/promote`, label: "Promote services", icon: "reports" },
+      { href: `${clinicRoot}/promote/materials`, label: "Marketing materials", icon: "audit" },
     ],
   },
   {
@@ -70,7 +70,7 @@ export const CLINIC_NAV: ClinicNavGroup[] = [
   {
     label: "Commission",
     items: [
-      { href: `${clinicRoot}/commission`, label: "Overview & Earnings", icon: "outcomes" },
+      { href: `${clinicRoot}/commission`, label: "Overview & earnings", icon: "outcomes" },
       { href: `${clinicRoot}/commission/pending`, label: "Pending", icon: "clock" },
       { href: `${clinicRoot}/payouts`, label: "Payouts", icon: "check" },
     ],
@@ -87,8 +87,8 @@ export const CLINIC_NAV: ClinicNavGroup[] = [
   {
     label: "Account",
     items: [
-      { href: `${clinicRoot}/profile`, label: "My Profile", icon: "profile" },
-      { href: `${clinicRoot}/organization`, label: "Organization Profile", icon: "clients" },
+      { href: `${clinicRoot}/profile`, label: "My profile", icon: "profile" },
+      { href: `${clinicRoot}/organization`, label: "Organization profile", icon: "clients" },
       { href: `${clinicRoot}/settings`, label: "Settings", icon: "settings" },
     ],
   },
@@ -107,9 +107,13 @@ function NavLink({ item, pathname }: { item: ClinicNavItem; pathname: string }) 
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className="nav-item"
+      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "bg-kindred-leaf-soft text-[#315d13] ring-1 ring-inset ring-kindred-leaf/20"
+          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+      }`}
     >
-      <Icon name={item.icon} className="nav-item-icon h-4.5 w-4.5 shrink-0" />
+      <Icon name={item.icon} className="h-4.5 w-4.5 shrink-0" />
       <span>{item.label}</span>
     </Link>
   );
@@ -152,9 +156,9 @@ export function ClinicShell({
               key={item.href}
               href={item.href}
               aria-current={isActive(pathname, item) ? "page" : undefined}
-              className={`flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+              className={`flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${
                 isActive(pathname, item)
-                  ? "bg-teal-50 text-teal-800 ring-1 ring-inset ring-teal-200 dark:bg-teal-900/40 dark:text-teal-200"
+                  ? "bg-kindred-leaf-soft text-[#315d13] ring-1 ring-inset ring-kindred-leaf/20"
                   : "bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:text-slate-900 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700 dark:hover:text-white"
               }`}
             >
@@ -167,12 +171,12 @@ export function ClinicShell({
         <div className="flex gap-6 pb-10 pt-4 lg:gap-8 lg:pt-6">
           <aside className="hidden w-64 shrink-0 lg:block">
             <div className="sticky top-24 mt-6 max-h-[calc(100dvh-8rem)] space-y-3 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2.5 shadow-xs">
-              <p className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-300">
-                Collaborative Clinic
+              <p className="px-3 pb-1 pt-1 text-xs font-medium text-slate-600">
+                Collaborative clinic
               </p>
               {CLINIC_NAV.map((group) => (
                 <div key={group.label}>
-                  <p className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-500">
+                  <p className="px-3 pb-1.5 pt-1 text-xs font-medium text-slate-500">
                     {group.label}
                   </p>
                   <div className="space-y-1">

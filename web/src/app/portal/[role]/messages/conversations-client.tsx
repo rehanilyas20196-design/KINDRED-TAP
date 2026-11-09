@@ -10,7 +10,6 @@ import {
 } from "@/components/portal-guard";
 import { RoleShell } from "@/components/therapist/shell";
 import {
-  Badge,
   Button,
   EmptyState,
   LinkButton,
@@ -73,20 +72,19 @@ export default function ConversationList({ role }: { role: string }) {
   }
 
   return (
-    <RoleShell role={role} portal={portal!} user={guard.user}>
-      <div className="space-y-6">
+    <RoleShell role={role} portal={portal!} user={guard.user} showWelcome={false}>
+      <div className="space-y-5">
         <PageTitle
-          eyebrow="Private"
-          description="Only you and the person you are talking to can read these."
+          description="A private place to stay in touch with your care team."
           action={
             role === "user" ? (
               <LinkButton href="/portal/user/matching" size="sm">
-                Browse therapists
+                Find a therapist
               </LinkButton>
             ) : undefined
           }
         >
-          Your messages
+          Messages
         </PageTitle>
 
         {error !== null && conversations === null ? (
@@ -115,53 +113,49 @@ export default function ConversationList({ role }: { role: string }) {
             }
           />
         ) : (
-          <Stagger className="space-y-3">
+          <Stagger className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">
             {conversations.map((conversation) => (
               <StaggerItem key={conversation.id}>
                 <Link
                   href={`/portal/${role}/messages/${conversation.id}`}
-                  className="card card-interactive flex items-start gap-3.5 p-4"
+                  className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-[#f8f6f1] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-kindred-leaf sm:px-5"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xs font-semibold text-teal-800 ring-1 ring-inset ring-teal-100">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-kindred-leaf-soft text-sm font-medium text-kindred-leaf">
                     {avatarInitials(conversation.otherName ?? conversation.otherUserId)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline justify-between gap-3">
-                      <span className="truncate text-sm font-semibold text-slate-900">
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="truncate text-sm font-medium text-slate-900">
                         {conversation.otherName ?? conversation.otherUserId.slice(0, 8)}
                       </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        {conversation.unreadCount > 0 ? (
-                          <>
-                            <span className="sr-only">
-                              {`${conversation.unreadCount} unread message${
-                                conversation.unreadCount === 1 ? "" : "s"
-                              }`}
-                            </span>
-                            <span aria-hidden="true">
-                              <Badge tone="accent" className="min-w-5 justify-center">
-                                {conversation.unreadCount}
-                              </Badge>
-                            </span>
-                          </>
-                        ) : null}
-                        <span className="text-[11px] text-slate-500">
-                          <time dateTime={conversation.updatedAt}>
-                            {relativeTime(conversation.updatedAt)}
-                          </time>
+                      <time
+                        dateTime={conversation.updatedAt}
+                        className="shrink-0 text-xs tabular-nums text-slate-500"
+                      >
+                        {relativeTime(conversation.updatedAt)}
+                      </time>
+                    </span>
+                    <span className="mt-1 flex items-center gap-2">
+                      {conversation.otherRole ? (
+                        <span className="shrink-0 text-xs text-slate-500">
+                          {portalFor(conversation.otherRole)?.portal ?? "Care team"}
                         </span>
+                      ) : null}
+                      <span className="truncate text-sm text-slate-600">
+                        {conversation.lastMessage ?? "No messages yet"}
                       </span>
                     </span>
-                    <span
-                      className={`mt-1 block truncate text-xs ${
-                        conversation.unreadCount > 0
-                          ? "font-medium text-slate-700"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      {conversation.lastMessage ?? "No messages yet"}
-                    </span>
                   </span>
+                  {conversation.unreadCount > 0 ? (
+                    <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-kindred-leaf">
+                      <span className="h-2 w-2 rounded-full bg-kindred-leaf" aria-hidden="true" />
+                      <span className="sr-only">
+                        {`${conversation.unreadCount} unread message${
+                          conversation.unreadCount === 1 ? "" : "s"
+                        }`}
+                      </span>
+                    </span>
+                  ) : null}
                 </Link>
               </StaggerItem>
             ))}

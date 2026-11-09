@@ -12,12 +12,17 @@ import { readSession } from "@/lib/api";
 let ws: WebSocket | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 const listeners = new Map<string, Set<(payload: unknown) => void>>();
+type SocketMessage = Record<string, unknown> & { type: string };
+const pendingMessages: SocketMessage[] = [];
+const joinedConversations = new Set<string>();
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const WS_URL = API_URL.replace(/^http/, "ws") + "/api/calls/ws";
 
 export function getSocket(): WebSocket {
-  if (ws && ws.readyState === WebSocket.OPEN) return ws;
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+    return ws;
+  }
 
   const token = readSession();
   const url = token ? `${WS_URL}?token=${encodeURIComponent(token)}` : WS_URL;
@@ -25,11 +30,25 @@ export function getSocket(): WebSocket {
   const socket = new WebSocket(url);
   ws = socket;
 
+  socket.addEventListener("open", () => {
+    for (const conversationId of joinedConversations) {
+      socket.send(JSON.stringify({ type: "join_conversation", conversationId }));
+    }
+    while (pendingMessages.length && socket.readyState === WebSocket.OPEN) {
+      const message = pendingMessages.shift();
+      if (message) socket.send(JSON.stringify(message));
+    }
+  });
+
   socket.addEventListener("message", (event) => {
     try {
       const data = JSON.parse(event.data);
       const { type } = data;
-      if (type && listeners.has(type)) {
+      if (data.error && listeners.has("call_error")) {
+        for (const fn of listeners.get("call_error")!) {
+          fn({ error: data.error });
+        }
+      } else if (type && listeners.has(type)) {
         for (const fn of listeners.get(type)!) {
           fn(data);
         }
@@ -40,11 +59,14 @@ export function getSocket(): WebSocket {
   });
 
   socket.addEventListener("close", () => {
-    ws = null;
+    if (ws === socket) ws = null;
     // Attempt to reconnect after a short delay.
-    reconnectTimeout = setTimeout(() => {
-      getSocket();
-    }, 3000);
+    if (!reconnectTimeout) {
+      reconnectTimeout = setTimeout(() => {
+        reconnectTimeout = null;
+        if (joinedConversations.size || pendingMessages.length) getSocket();
+      }, 3000);
+    }
   });
 
   socket.addEventListener("error", () => {
@@ -63,9 +85,14 @@ export function disconnectSocket(): void {
     ws.close();
     ws = null;
   }
+  joinedConversations.clear();
+  pendingMessages.length = 0;
 }
 
 export interface CallEvents {
+  call_error: {
+    error: string;
+  };
   call_incoming: {
     callId: string;
     conversationId: string;
@@ -123,15 +150,27 @@ export function off<T extends CallEventName>(event: T, fn: (payload: unknown) =>
 }
 
 export function send(type: string, payload: Record<string, unknown>): void {
+  const message: SocketMessage = { type, ...payload };
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type, ...payload }));
+    ws.send(JSON.stringify(message));
+  } else {
+    pendingMessages.push(message);
+    getSocket();
   }
 }
 
 export function joinConversation(conversationId: string): void {
-  send("join_conversation", { conversationId });
+  joinedConversations.add(conversationId);
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    send("join_conversation", { conversationId });
+  } else {
+    getSocket();
+  }
 }
 
 export function leaveConversation(conversationId: string): void {
-  send("leave_conversation", { conversationId });
+  joinedConversations.delete(conversationId);
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    send("leave_conversation", { conversationId });
+  }
 }

@@ -165,11 +165,13 @@ export function RoleShell({
   portal,
   user,
   children,
+  showWelcome = true,
 }: {
   role: string;
   portal: PortalMeta;
   user: AuthUser;
   children: ReactNode;
+  showWelcome?: boolean;
 }) {
   if (role === "therapist") {
     return <TherapistShell portal={portal} user={user}>{children}</TherapistShell>;
@@ -183,5 +185,9 @@ export function RoleShell({
   if (role === "collaborative_clinic") {
     return <ClinicShell portal={portal} user={user}>{children}</ClinicShell>;
   }
-  return <DashboardShell portal={portal} user={user}>{children}</DashboardShell>;
+  return (
+    <DashboardShell portal={portal} user={user} showWelcome={showWelcome}>
+      {children}
+    </DashboardShell>
+  );
 }

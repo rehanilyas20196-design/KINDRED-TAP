@@ -1,235 +1,285 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@/components/icons";
-import type { AuthUser } from "@/lib/api";
-import type { CallInfo, CallState } from "./useVideoCall";
+import type { CallState, VideoCall } from "./useVideoCall";
 
 interface CallButtonProps {
-  conversationId: string;
-  user: AuthUser;
-  otherUserId: string;
   otherName: string;
+  canCall: boolean;
   callState: CallState;
-  call: CallInfo | null;
+  call: VideoCall | null;
+  callError: string | null;
   isRinging: boolean;
-  startCall: () => void;
-  acceptCall: () => void;
-  rejectCall: () => void;
-  cancelCall: () => void;
-  endCall: () => void;
-  onCallEnd?: () => void;
+  startCall: () => Promise<void>;
+  acceptCall: () => Promise<void>;
+  rejectCall: () => Promise<void>;
+  cancelCall: () => Promise<void>;
 }
 
-export function CallButton({
-  conversationId,
-  user,
-  otherUserId,
+function initials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+export default function CallButton({
   otherName,
+  canCall,
   callState,
   call,
+  callError,
   isRinging,
   startCall,
   acceptCall,
   rejectCall,
   cancelCall,
-  endCall,
-  onCallEnd,
 }: CallButtonProps) {
   const [showCallUI, setShowCallUI] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [isActing, setIsActing] = useState(false);
 
-  // Reset call UI when the call fully ends.
-  if (
-    callState === "ended" ||
-    callState === "failed" ||
-    callState === "missed"
-  ) {
-    setShowCallUI(false);
-  }
+  const beginCall = () => {
+    if (!canCall || isStarting || isRinging || callState === "outgoing") return;
+    setShowCallUI(true);
+    setIsStarting(true);
+    void startCall().finally(() => setIsStarting(false));
+  };
+
+  const answerCall = async () => {
+    setIsActing(true);
+    try {
+      await acceptCall();
+    } finally {
+      setIsActing(false);
+    }
+  };
+
+  const declineCall = async () => {
+    setIsActing(true);
+    try {
+      await rejectCall();
+    } finally {
+      setIsActing(false);
+    }
+  };
 
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
-        aria-label="Start video call"
-        onClick={() => {
-          setShowCallUI(true);
-          void startCall();
-        }}
-        disabled={
-          callState === "outgoing" || callState === "ringing"
-        }
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-teal-700 disabled:opacity-50 disabled:pointer-events-none"
+        onClick={beginCall}
+        disabled={!canCall || isStarting || isRinging || callState === "outgoing"}
+        className="btn-green inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Icon name="video" className="h-5 w-5" />
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          className="h-[18px] w-[18px]"
+        >
+          <path d="m15 10 5-3v10l-5-3" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="3" y="6" width="12" height="12" rx="2" />
+        </svg>
+        Video call
       </button>
 
-      {showCallUI && (
-        <>
-          {isRinging && call ? (
-            <IncomingCallModal
-              call={call}
-              callerName={otherName}
-              userId={user.id}
-              onAccept={acceptCall}
-              onReject={rejectCall}
-            />
+      {(showCallUI || isRinging) && isRinging && call ? (
+        <IncomingCallDialog
+          callerName={otherName}
+          error={callError}
+          isActing={isActing}
+          onAccept={() => void answerCall()}
+          onReject={() => void declineCall()}
+        />
+      ) : showCallUI ? (
+        <CallStatusDialog
+          name={otherName}
+          callState={callState}
+          call={call}
+          error={callError}
+          isStarting={isStarting}
+          onCancel={() => void cancelCall()}
+          onClose={() => setShowCallUI(false)}
+        />
+      ) : null}
+    </>
+  );
+}
+
+interface CallStatusDialogProps {
+  name: string;
+  callState: CallState;
+  call: VideoCall | null;
+  error: string | null;
+  isStarting: boolean;
+  onCancel: () => void;
+  onClose: () => void;
+}
+
+function CallStatusDialog({
+  name,
+  callState,
+  call,
+  error,
+  isStarting,
+  onCancel,
+  onClose,
+}: CallStatusDialogProps) {
+  const isPending = isStarting || callState === "outgoing" || callState === "ringing";
+  const title = isStarting
+    ? "Starting your call"
+    : callState === "outgoing"
+      ? `Calling ${name}`
+      : callState === "rejected"
+        ? "Call declined"
+        : callState === "missed"
+          ? "No answer"
+          : callState === "cancelled"
+            ? "Call cancelled"
+            : callState === "ended"
+              ? "Call ended"
+              : callState === "failed"
+                ? "Call could not start"
+                : "Video call";
+  const detail = isStarting
+    ? "Setting up a private video room"
+    : callState === "outgoing"
+      ? "Waiting for them to answer"
+      : callState === "rejected"
+        ? `${name} declined the call`
+        : callState === "missed"
+          ? `${name} did not answer`
+          : callState === "cancelled"
+            ? "The call was cancelled before it connected"
+            : callState === "ended"
+              ? "This call has ended"
+              : callState === "failed"
+                ? "Check your connection and try again"
+                : "Your call is ready";
+
+  return (
+    <div
+      role="presentation"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4"
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="call-status-title"
+        aria-describedby="call-status-detail"
+        className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xl"
+      >
+        <p className="text-sm font-medium text-slate-500">Kindred Tap video call</p>
+        <div className="mx-auto mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#edf4e5] text-lg font-medium text-[#315d13]">
+          {initials(name) || "KT"}
+        </div>
+        <h2 id="call-status-title" className="mt-4 text-xl font-medium text-slate-900">
+          {title}
+        </h2>
+        <p id="call-status-detail" aria-live="polite" className="mt-2 text-sm text-slate-600">
+          {detail}
+        </p>
+        {call ? (
+          <p className="mt-4 text-xs tabular-nums text-slate-500">
+            {callState === "outgoing" ? "Call request sent" : "Connecting"}
+          </p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-left text-sm text-rose-800">
+            {error}
+          </p>
+        ) : null}
+        <div className="mt-6">
+          {isPending ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={!call || isStarting}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancel call
+            </button>
           ) : (
-            <CallStatusIndicator
-              callState={callState}
-              call={call}
-              onCancel={cancelCall}
-              onEnd={endCall}
-              onClose={() => setShowCallUI(false)}
-            />
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-green inline-flex min-h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium"
+            >
+              Close
+            </button>
           )}
-        </>
-      )}
+        </div>
+      </section>
     </div>
   );
 }
 
-interface IncomingCallModalProps {
-  call: CallInfo;
+interface IncomingCallDialogProps {
   callerName: string;
-  userId: string;
+  error: string | null;
+  isActing: boolean;
   onAccept: () => void;
   onReject: () => void;
 }
 
-function IncomingCallModal({
-  call,
+function IncomingCallDialog({
   callerName,
-  userId,
+  error,
+  isActing,
   onAccept,
   onReject,
-}: IncomingCallModalProps) {
-  const isIncoming = call.callerId !== userId;
-
+}: IncomingCallDialogProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Incoming video call"
+      role="presentation"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4"
     >
-      <div className="w-full max-w-md p-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800 text-white mx-auto mb-4">
-          <span className="text-sm font-medium">{callerName.charAt(0).toUpperCase()}</span>
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="incoming-call-title"
+        className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xl"
+      >
+        <p className="text-sm font-medium text-slate-500">Incoming video call</p>
+        <div className="mx-auto mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#edf4e5] text-lg font-medium text-[#315d13]">
+          {initials(callerName) || "KT"}
         </div>
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-1">
-          Incoming video call
+        <h2 id="incoming-call-title" className="mt-4 text-xl font-medium text-slate-900">
+          {callerName}
+        </h2>
+        <p aria-live="polite" className="mt-2 text-sm text-slate-600">
+          {isActing ? "Connecting to the call" : "Would like to talk with you"}
         </p>
-        <h3 className="text-xl font-semibold text-white mb-1">{callerName}</h3>
-        <p className="text-sm text-slate-300 mb-8">
-          {isIncoming ? "is calling you" : "You are calling"}
-        </p>
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onAccept}
-            className="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition shadow-lg shadow-emerald-900/20"
-          >
-            Accept
-          </button>
+        {error ? (
+          <p role="alert" className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-left text-sm text-rose-800">
+            {error}
+          </p>
+        ) : null}
+        <div className="mt-6 grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={onReject}
-            className="flex-1 py-3 rounded-xl bg-rose-600 text-white font-semibold hover:bg-rose-700 transition shadow-lg shadow-rose-900/20"
+            disabled={isActing}
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500 disabled:opacity-50"
           >
-            Reject
+            Decline
+          </button>
+          <button
+            type="button"
+            onClick={onAccept}
+            disabled={isActing}
+            className="btn-green inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-medium disabled:opacity-50"
+          >
+            {isActing ? "Joining" : "Answer"}
           </button>
         </div>
-
-        {isIncoming && (
-          <p className="mt-4 text-[10px] text-slate-500">
-            Call will time out in 30 seconds if unanswered.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface CallStatusIndicatorProps {
-  callState: CallState;
-  call: CallInfo | null;
-  onCancel: () => void;
-  onEnd: () => void;
-  onClose: () => void;
-}
-
-function CallStatusIndicator({
-  callState,
-  call,
-  onCancel,
-  onEnd,
-  onClose,
-}: CallStatusIndicatorProps) {
-  const isOutgoing =
-    callState === "outgoing" || callState === "ringing";
-  const labelMap: Record<CallState, string> = {
-    idle: "Idle",
-    outgoing: "Calling\u2026",
-    ringing: "Ringing\u2026",
-    accepted: "Accepted",
-    connecting: "Connecting\u2026",
-    connected: "Connected",
-    rejected: "Rejected",
-    missed: "Missed",
-    cancelled: "Cancelled",
-    ended: "Ended",
-    failed: "Failed",
-  };
-
-  const isTerminal =
-    callState === "rejected" ||
-    callState === "missed" ||
-    callState === "cancelled" ||
-    callState === "ended" ||
-    callState === "failed";
-
-  return (
-    <div
-      className="fixed bottom-4 right-4 z-50 w-48 rounded-xl border border-slate-200 bg-white p-4 shadow-lg"
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <div className="h-2 w-2 rounded-full bg-slate-400 animate-pulse" />
-        <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-          {labelMap[callState]}
-        </span>
-      </div>
-
-      {isOutgoing && call && (
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50 transition"
-        >
-          Cancel call
-        </button>
-      )}
-
-      {!isOutgoing && call && !isTerminal && (
-        <button
-          type="button"
-          onClick={onEnd}
-          className="w-full py-2 rounded-lg border border-rose-200 bg-white text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
-        >
-          End call
-        </button>
-      )}
-
-      {isTerminal && (
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50 transition"
-        >
-          Close
-        </button>
-      )}
+      </section>
     </div>
   );
 }

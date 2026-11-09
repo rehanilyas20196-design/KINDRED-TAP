@@ -19,6 +19,8 @@ export const CALL_TIMEOUT_MS = 30_000;
 
 /** Map of conversation id -> set of clients in that conversation. */
 const conversationClients = new Map();
+/** @type {Map<string, ReturnType<typeof setTimeout>} */
+const callTimers = new Map();
 
 /**
  * Get or create the client set for a conversation.
@@ -52,6 +54,25 @@ function broadcastToConversation(conversationId, message, exclude) {
   }
 }
 
+/** @param {string} callId */
+function clearCallTimer(callId) {
+  const timer = callTimers.get(callId);
+  if (timer) {
+    clearTimeout(timer);
+    callTimers.delete(callId);
+  }
+}
+
+/**
+ * @param {string} callId
+ * @param {number} ms
+ * @param {() => void} fn
+ */
+function setCallTimer(callId, ms, fn) {
+  clearCallTimer(callId);
+  callTimers.set(callId, setTimeout(fn, ms));
+}
+
 /**
  * Attach a WebSocket server to the Express HTTP server. Call this after `app`
  * is built but before `server.listen()`.
@@ -63,6 +84,10 @@ export function createSocketServer(app) {
   const httpServer = createServer(app);
 
   const wss = new WebSocketServer({ server: httpServer, path: "/api/calls/ws" });
+  wss.on("close", () => {
+    for (const timer of callTimers.values()) clearTimeout(timer);
+    callTimers.clear();
+  });
 
   wss.on("connection", async (ws, req) => {
     // Authenticate using the bearer token from the query string.
@@ -101,28 +126,6 @@ export function createSocketServer(app) {
       return;
     }
 
-    /** @type {Map<string, ReturnType<typeof setTimeout>>} */
-    const callTimers = new Map();
-
-    /** @param {string} callId */
-    function clearCallTimer(callId) {
-      const timer = callTimers.get(callId);
-      if (timer) {
-        clearTimeout(timer);
-        callTimers.delete(callId);
-      }
-    }
-
-    /**
-     * @param {string} callId
-     * @param {number} ms
-     * @param {() => void} fn
-     */
-    function setCallTimer(callId, ms, fn) {
-      clearCallTimer(callId);
-      callTimers.set(callId, setTimeout(fn, ms));
-    }
-
     ws.on("message", async (raw) => {
       /** @type {any} */
       let data;
@@ -142,6 +145,24 @@ export function createSocketServer(app) {
           const { conversationId } = data;
           if (!conversationId || typeof conversationId !== "string") break;
 
+          let conversation;
+          try {
+            conversation = await queryOne(
+              `SELECT id
+                 FROM conversations
+                WHERE id = $1 AND (user_id = $2 OR therapist_id = $2)
+                LIMIT 1`,
+              [conversationId, userId]
+            );
+          } catch {
+            ws.send(JSON.stringify({ error: "Unable to join conversation" }));
+            break;
+          }
+          if (!conversation) {
+            ws.send(JSON.stringify({ error: "Conversation not found or you are not a participant" }));
+            break;
+          }
+
           // Leave any previous conversation.
           if (ws.conversationId) {
             const prevSet = conversationClients.get(ws.conversationId);
@@ -153,13 +174,20 @@ export function createSocketServer(app) {
           break;
         }
 
+        case "leave_conversation": {
+          const { conversationId } = data;
+          if (typeof conversationId !== "string" || ws.conversationId !== conversationId) break;
+          conversationClients.get(conversationId)?.delete(ws);
+          ws.conversationId = null;
+          break;
+        }
+
         case "call_start": {
-          /** @type {string} */
-          const { conversationId, receiverId } = data;
+          const { callId, conversationId, receiverId } = data;
           const callerId = userId;
 
-          if (!conversationId || !receiverId) {
-            ws.send(JSON.stringify({ error: "Missing conversation or receiver" }));
+          if (!callId || !conversationId || !receiverId) {
+            ws.send(JSON.stringify({ error: "Missing call, conversation or receiver" }));
             break;
           }
 
@@ -183,39 +211,48 @@ export function createSocketServer(app) {
               break;
             }
 
-            const existing = await queryOne(
-              `SELECT id FROM video_calls
-                WHERE conversation_id = $1
-                  AND status IN ('outgoing', 'ringing', 'accepted', 'connecting', 'connected')
+            const call = await queryOne(
+              `SELECT id, conversation_id, caller_id, receiver_id, room_id, status
+                 FROM video_calls
+                WHERE id = $1 AND conversation_id = $2
                 LIMIT 1`,
-              [conversationId]
+              [callId, conversationId]
             );
-            if (existing) {
-              ws.send(JSON.stringify({ error: "A call is already active in this conversation" }));
+            if (!call || call.caller_id !== callerId || call.receiver_id !== receiverId) {
+              ws.send(JSON.stringify({ error: "Call not found or you are not the caller" }));
+              break;
+            }
+            if (call.status !== "outgoing") {
+              ws.send(JSON.stringify({ error: "Call is no longer available" }));
               break;
             }
 
-            const roomId = `kindred-${crypto.randomUUID()}`;
-
-            const result = await queryOne(
-              `INSERT INTO video_calls (conversation_id, caller_id, receiver_id, room_id, status)
-               VALUES ($1, $2, $3, $4, 'outgoing')
-               RETURNING id`,
-              [conversationId, callerId, receiverId, roomId]
+            const ringingCall = await queryOne(
+              `UPDATE video_calls
+                  SET status = 'ringing'
+                WHERE id = $1 AND status = 'outgoing'
+                RETURNING id`,
+              [callId]
             );
-            const callId = result.id;
+            if (!ringingCall) {
+              ws.send(JSON.stringify({ error: "Call is no longer available" }));
+              break;
+            }
 
             setCallTimer(callId, CALL_TIMEOUT_MS, async () => {
-              const call = await queryOne(
-                `SELECT status FROM video_calls WHERE id = $1 LIMIT 1`,
-                [callId]
-              );
-              if (call && call.status === "ringing") {
-                await queryOne(
-                  `UPDATE video_calls SET status = 'missed', ended_at = now() WHERE id = $1`,
+              try {
+                const call = await queryOne(
+                  `SELECT conversation_id, status FROM video_calls WHERE id = $1 LIMIT 1`,
                   [callId]
                 );
-                broadcastToConversation(conversationId, { type: "call_missed", callId });
+                if (call && call.status === "ringing") {
+                  await queryOne(
+                    `UPDATE video_calls SET status = 'missed', ended_at = now() WHERE id = $1`,
+                    [callId]
+                  );
+                  broadcastToConversation(call.conversation_id, { type: "call_missed", callId });
+                }
+              } finally {
                 clearCallTimer(callId);
               }
             });
@@ -225,10 +262,10 @@ export function createSocketServer(app) {
               callId,
               conversationId,
               callerId,
-              roomId,
+              roomId: call.room_id,
             });
 
-            ws.send(JSON.stringify({ ok: true, callId, roomId }));
+            ws.send(JSON.stringify({ ok: true, callId, roomId: call.room_id }));
           } catch (err) {
             ws.send(JSON.stringify({ error: err.message || "Failed to start call" }));
           }
@@ -260,15 +297,11 @@ export function createSocketServer(app) {
               ws.send(JSON.stringify({ error: "Only the receiver can accept" }));
               break;
             }
-            if (call.status !== "ringing") {
-              ws.send(JSON.stringify({ error: "Call is no longer ringing" }));
+            if (call.status !== "accepted") {
+              ws.send(JSON.stringify({ error: "Call was not accepted" }));
               break;
             }
 
-            await queryOne(
-              `UPDATE video_calls SET status = 'accepted', accepted_at = now() WHERE id = $1`,
-              [callId]
-            );
             clearCallTimer(callId);
 
             broadcastToConversation(call.conversation_id, {
@@ -310,15 +343,11 @@ export function createSocketServer(app) {
               ws.send(JSON.stringify({ error: "Only the receiver can reject" }));
               break;
             }
-            if (call.status !== "ringing") {
-              ws.send(JSON.stringify({ error: "Call is no longer ringing" }));
+            if (call.status !== "rejected") {
+              ws.send(JSON.stringify({ error: "Call was not declined" }));
               break;
             }
 
-            await queryOne(
-              `UPDATE video_calls SET status = 'rejected', ended_at = now() WHERE id = $1`,
-              [callId]
-            );
             clearCallTimer(callId);
 
             broadcastToConversation(call.conversation_id, {
@@ -360,15 +389,11 @@ export function createSocketServer(app) {
               ws.send(JSON.stringify({ error: "Only the caller can cancel" }));
               break;
             }
-            if (call.status !== "outgoing" && call.status !== "ringing") {
-              ws.send(JSON.stringify({ error: "Call cannot be cancelled" }));
+            if (call.status !== "cancelled") {
+              ws.send(JSON.stringify({ error: "Call was not cancelled" }));
               break;
             }
 
-            await queryOne(
-              `UPDATE video_calls SET status = 'cancelled', ended_at = now() WHERE id = $1`,
-              [callId]
-            );
             clearCallTimer(callId);
 
             broadcastToConversation(call.conversation_id, {
@@ -410,15 +435,11 @@ export function createSocketServer(app) {
               ws.send(JSON.stringify({ error: "You are not a participant in this call" }));
               break;
             }
-            if (call.status === "ended" || call.status === "failed") {
-              ws.send(JSON.stringify({ error: "Call is already ended" }));
+            if (call.status !== "ended") {
+              ws.send(JSON.stringify({ error: "Call was not ended" }));
               break;
             }
 
-            await queryOne(
-              `UPDATE video_calls SET status = 'ended', ended_at = now() WHERE id = $1`,
-              [callId]
-            );
             clearCallTimer(callId);
 
             broadcastToConversation(call.conversation_id, {
@@ -542,11 +563,6 @@ export function createSocketServer(app) {
         const set = conversationClients.get(ws.conversationId);
         set && set.delete(ws);
       }
-      // Clear all call timers for this client's calls.
-      for (const timer of callTimers.values()) {
-        clearTimeout(timer);
-      }
-      callTimers.clear();
     });
 
     ws.on("error", () => {

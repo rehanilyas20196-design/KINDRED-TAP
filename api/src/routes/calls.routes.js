@@ -3,7 +3,7 @@
  *
  * All routes require authentication. The caller/conversation/receiver are
  * validated against the database on every request - the client never supplies
- * trusted identifiers. Real-time signaling happens over Socket.IO; these
+ * trusted identifiers. Real-time signaling happens over WebSocket; these
  * endpoints are used for call state queries and fallback actions.
  */
 

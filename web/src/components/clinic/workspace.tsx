@@ -19,7 +19,6 @@ import {
   SegmentedControl,
   StatusPill,
   inputClass,
-  primaryActionClass,
   secondaryActionClass,
   textareaClass,
   type Column,
@@ -33,7 +32,6 @@ import {
   fetchSettings,
   fetchThread,
   fetchThreads,
-  formatDate,
   formatDateTime,
   formatDay,
   generateReport,
@@ -215,7 +213,6 @@ export function MessagesClient() {
     Array<{ id: string; body: string; senderId: string; senderName: string | null; createdAt: string }> | null
   >(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [topic, setTopic] = useState("");
   const [sending, setSending] = useState(false);
@@ -225,7 +222,12 @@ export function MessagesClient() {
       setError(null);
       const data = await fetchThreads();
       setThreads(data.threads);
-      if (data.threads.length && !openId) setOpenId(data.threads[0].id);
+      if (data.threads.length && !openId) {
+        const firstThread = data.threads[0];
+        setOpenId(firstThread.id);
+        const firstMessages = await fetchThread(firstThread.id);
+        setMessages(firstMessages.messages);
+      }
     } catch (err) {
       setError(messageFor(err));
     }
@@ -287,56 +289,77 @@ export function MessagesClient() {
     <ClinicPage>
       <PageHeader
         title="Messages"
-        description="Secure communication with the Kindred Tap partnership team, about referrals, agreements and commission."
+        description="Private coordination with the Kindred Tap partnership team."
       />
 
       {error ? <Notice tone="rose">{error}</Notice> : null}
-      {notice ? <Notice>{notice}</Notice> : null}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Panel title="Conversations" className="lg:col-span-1">
+      <div className="grid items-stretch gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <section className="card flex flex-col overflow-hidden p-0">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <h2 className="text-base font-medium text-slate-900">Conversations</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {threads
+                ? `${threads.length} ${threads.length === 1 ? "thread" : "threads"}`
+                : "Your partner conversations"}
+            </p>
+          </div>
+
           {!threads ? (
-            <LoadingBlock label="Loading conversations..." />
-          ) : (
-            <ul className="space-y-2">
+            <div className="p-5">
+              <LoadingBlock label="Loading conversations" />
+            </div>
+          ) : threads.length ? (
+            <ul className="flex-1 space-y-1 p-2">
               {threads.map((thread) => (
                 <li key={thread.id}>
                   <button
                     type="button"
-                    onClick={() => openThread(thread.id)}
+                    onClick={() => void openThread(thread.id)}
                     aria-current={openId === thread.id ? "true" : undefined}
-                    className={`w-full rounded-2xl px-4 py-3 text-left transition ${
+                    className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kindred-leaf ${
                       openId === thread.id
-                        ? "bg-teal-50 dark:bg-teal-500/10"
-                        : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                        ? "bg-kindred-leaf-soft"
+                        : "hover:bg-slate-50"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="truncate text-sm font-medium text-slate-900">
                         {thread.topic}
                       </span>
-                      {thread.unread > 0 ? <Badge tone="teal">{thread.unread} new</Badge> : null}
-                    </div>
-                    <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-slate-400">
-                      {thread.lastMessage ?? "No messages yet"}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-500">
-                      {formatDay(thread.lastMessageAt)}
-                    </p>
+                      <time
+                        dateTime={thread.lastMessageAt}
+                        className="shrink-0 text-xs tabular-nums text-slate-500"
+                      >
+                        {formatDay(thread.lastMessageAt)}
+                      </time>
+                    </span>
+                    <span className="mt-1 flex items-center gap-2">
+                      <span className="truncate text-sm text-slate-600">
+                        {thread.lastMessage ?? "No messages yet"}
+                      </span>
+                      {thread.unread > 0 ? (
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-kindred-leaf" aria-label="Unread" />
+                      ) : null}
+                    </span>
                   </button>
                 </li>
               ))}
             </ul>
+          ) : (
+            <div className="flex-1 p-5">
+              <EmptyState title="No conversations yet" body="Start a thread with the partnership team." />
+            </div>
           )}
 
-          <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+          <div className="border-t border-slate-200 p-4">
             <Field label="Start a conversation">
               <input
                 type="text"
                 value={topic}
                 onChange={(event) => setTopic(event.target.value)}
                 maxLength={160}
-                placeholder="Subject"
+                placeholder="Topic"
                 className={inputClass}
               />
             </Field>
@@ -344,44 +367,75 @@ export function MessagesClient() {
               type="button"
               onClick={startThread}
               disabled={sending || !topic.trim()}
-              className={`mt-2 ${secondaryActionClass}`}
+              className="btn-green mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-lg px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kindred-leaf disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {sending ? "Opening..." : "Open conversation"}
+              {sending ? "Opening conversation" : "Open conversation"}
             </button>
           </div>
-        </Panel>
+        </section>
 
-        <Panel title="Conversation" className="lg:col-span-2">
-          {!openId ? (
-            <EmptyState title="No conversation selected" body="Choose a conversation on the left." />
-          ) : !messages ? (
-            <LoadingBlock label="Loading messages..." />
-          ) : messages.length === 0 ? (
-            <EmptyState title="No messages" body="Write the first message in this conversation." />
-          ) : (
-            <ul className="space-y-3">
-              {messages.map((message) => (
-                <li
-                  key={message.id}
-                  className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60"
-                >
-                  <p className="text-sm leading-6 text-slate-700 dark:text-slate-200">{message.body}</p>
-                  <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                    {message.senderName ?? "Unknown"} &middot; {formatDateTime(message.createdAt)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+        <section className="card flex h-[min(68vh,680px)] min-h-[420px] flex-col overflow-hidden p-0">
+          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-medium text-slate-900">
+                {threads?.find((thread) => thread.id === openId)?.topic ?? "Conversation"}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">Kindred Tap partnership team</p>
+            </div>
+            {messages ? (
+              <span className="shrink-0 text-xs tabular-nums text-slate-500">
+                {messages.length} messages
+              </span>
+            ) : null}
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[#f8f6f1] p-4 sm:p-6">
+            {!openId ? (
+              <div className="flex h-full items-center justify-center">
+                <EmptyState title="No conversation selected" body="Choose a thread or start a conversation." />
+              </div>
+            ) : !messages ? (
+              <LoadingBlock label="Loading messages" />
+            ) : messages.length === 0 ? (
+              <div className="flex h-full items-center justify-center">
+                <EmptyState title="No messages yet" body="Write the first message in this conversation." />
+              </div>
+            ) : (
+              <ul className="mx-auto max-w-3xl space-y-5">
+                {messages.map((message) => (
+                  <li key={message.id} className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-xs font-medium text-kindred-leaf ring-1 ring-slate-200">
+                      {(message.senderName ?? "K").trim().charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0 max-w-[85%]">
+                      <p className="mb-1.5 px-1 text-xs text-slate-500">
+                        <span className="font-medium text-slate-700">
+                          {message.senderName ?? "Partnership team"}
+                        </span>
+                        <span aria-hidden="true"> · </span>
+                        <time dateTime={message.createdAt} className="tabular-nums">
+                          {formatDateTime(message.createdAt)}
+                        </time>
+                      </p>
+                      <div className="whitespace-pre-wrap break-words rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-800">
+                        {message.body}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           {openId ? (
-            <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+            <div className="border-t border-slate-200 bg-white p-4 sm:p-5">
               <Field label="Reply">
                 <textarea
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
-                  rows={3}
+                  rows={2}
                   maxLength={4000}
+                  placeholder="Write a message"
                   className={textareaClass}
                 />
               </Field>
@@ -389,13 +443,13 @@ export function MessagesClient() {
                 type="button"
                 onClick={send}
                 disabled={sending || !draft.trim()}
-                className={`mt-2 ${primaryActionClass}`}
+                className="btn-green mt-3 inline-flex min-h-10 items-center justify-center rounded-lg px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kindred-leaf disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {sending ? "Sending..." : "Send message"}
+                {sending ? "Sending message" : "Send message"}
               </button>
             </div>
           ) : null}
-        </Panel>
+        </section>
       </div>
     </ClinicPage>
   );

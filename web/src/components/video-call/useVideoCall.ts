@@ -45,6 +45,8 @@ export interface CallInfo {
   endedAt?: string;
 }
 
+export type VideoCall = CallInfo;
+
 interface UseVideoCallOptions {
   conversationId: string;
   user: AuthUser;
@@ -62,7 +64,11 @@ export function useVideoCall({
   const [call, setCall] = useState<CallInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ringToneRef = useRef<{ stop: () => void } | null>(null);
-  const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const callRef = useRef<CallInfo | null>(null);
+
+  useEffect(() => {
+    callRef.current = call;
+  }, [call]);
 
   // Play a ring tone using the Web Audio API (no external asset required).
   function playRingTone() {
@@ -114,11 +120,6 @@ export function useVideoCall({
   // Clean up on unmount.
   useEffect(() => {
     return () => {
-      if (ringTimeoutRef.current) {
-        const timer = ringTimeoutRef.current;
-        clearTimeout(timer);
-        ringTimeoutRef.current = null;
-      }
       if (ringToneRef.current) {
         ringToneRef.current.stop();
         ringToneRef.current = null;
@@ -138,65 +139,88 @@ export function useVideoCall({
   // Listen for call events from the server.
   useEffect(() => {
     const handlers: Record<CallEventName, (payload: unknown) => void> = {
+      call_error: (payload) => {
+        const p = payload as { error: string };
+        if (!callRef.current) return;
+        setError(p.error);
+        setCallState("failed");
+        setCall((c) => (c ? { ...c, status: "failed" } : null));
+        stopRingTone();
+      },
       call_incoming: (payload) => {
-        const p = payload as { callId: string; roomId: string };
+        const p = payload as {
+          callId: string;
+          conversationId: string;
+          callerId: string;
+          roomId: string;
+        };
+        if (p.conversationId !== conversationId || p.callerId === user.id) return;
         setCallState("ringing");
-        setCall({
+        const incomingCall: CallInfo = {
           id: p.callId,
           conversationId,
-          callerId: user.id,
+          callerId: p.callerId,
           receiverId: user.id,
           roomId: p.roomId,
           status: "ringing",
           createdAt: new Date().toISOString(),
-        });
+        };
+        callRef.current = incomingCall;
+        setCall(incomingCall);
         playRingTone();
       },
       call_accepted: (payload) => {
         const p = payload as { callId: string; roomId: string };
+        if (callRef.current?.id !== p.callId) return;
         setCallState("accepted");
         setCall((c) => (c ? { ...c, status: "accepted", roomId: p.roomId } : null));
         stopRingTone();
       },
-      call_rejected: () => {
+      call_rejected: (payload) => {
+        const p = payload as { callId: string };
+        if (callRef.current?.id !== p.callId) return;
         setCallState("rejected");
         setCall((c) => (c ? { ...c, status: "rejected" } : null));
         stopRingTone();
       },
-      call_cancelled: () => {
+      call_cancelled: (payload) => {
+        const p = payload as { callId: string };
+        if (callRef.current?.id !== p.callId) return;
         setCallState("cancelled");
         setCall((c) => (c ? { ...c, status: "cancelled" } : null));
         stopRingTone();
       },
-      call_ended: () => {
+      call_ended: (payload) => {
+        const p = payload as { callId: string };
+        if (callRef.current?.id !== p.callId) return;
         setCallState("ended");
         setCall((c) => (c ? { ...c, status: "ended" } : null));
         stopRingTone();
         onCallEnd?.();
       },
-      call_busy: () => {
+      call_busy: (payload) => {
+        const p = payload as { callId: string };
+        if (callRef.current?.id !== p.callId) return;
         setCallState("rejected");
         setCall((c) => (c ? { ...c, status: "rejected" } : null));
         stopRingTone();
       },
-      call_missed: () => {
+      call_missed: (payload) => {
+        const p = payload as { callId: string };
+        if (callRef.current?.id !== p.callId) return;
         setCallState("missed");
         setCall((c) => (c ? { ...c, status: "missed" } : null));
         stopRingTone();
       },
-      call_failed: () => {
+      call_failed: (payload) => {
+        const p = payload as { callId: string };
+        if (callRef.current?.id !== p.callId) return;
         setCallState("failed");
         setCall((c) => (c ? { ...c, status: "failed" } : null));
         stopRingTone();
       },
-      call_user_disconnected: (payload) => {
-        const p = payload as { userId: string };
-        if (p.userId !== user.id) {
-          setCallState("failed");
-          setCall((c) => (c ? { ...c, status: "failed" } : null));
-          stopRingTone();
-          onCallEnd?.();
-        }
+      call_user_disconnected: () => {
+        // A signaling socket can close while the media call remains active.
       },
     };
 
@@ -219,7 +243,7 @@ export function useVideoCall({
         { method: "POST", body: { conversationId } }
       );
       setCallState("outgoing");
-      setCall({
+      const outgoingCall: CallInfo = {
         id: res.call.id,
         conversationId,
         callerId: user.id,
@@ -227,9 +251,14 @@ export function useVideoCall({
         roomId: res.call.roomId,
         status: "outgoing",
         createdAt: new Date().toISOString(),
+      };
+      callRef.current = outgoingCall;
+      setCall(outgoingCall);
+      send("call_start", {
+        callId: res.call.id,
+        conversationId,
+        receiverId: otherUserId,
       });
-      // Also signal via WebSocket so the receiver gets it in real time.
-      send("call_start", { conversationId, receiverId: otherUserId });
     } catch (err) {
       setError(messageFor(err));
       setCallState("failed");

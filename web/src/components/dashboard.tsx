@@ -167,10 +167,12 @@ export function DashboardShell({
   portal,
   user,
   children,
+  showWelcome = true,
 }: {
   portal: PortalMeta;
   user: AuthUser;
   children: ReactNode;
+  showWelcome?: boolean;
 }) {
   const firstName = user.fullName?.split(" ")[0] ?? "there";
 
@@ -182,20 +184,22 @@ export function DashboardShell({
         tabIndex={-1}
         className="mx-auto w-full max-w-6xl px-4 py-7 outline-none sm:px-6 sm:py-9 lg:px-8"
       >
-        <div className="flex items-start gap-4">
-          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-teal-700 ring-1 ring-slate-200 sm:flex">
-            <PortalIcon role={portal.key} className="h-5.5 w-5.5" />
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
-              Welcome back, {firstName}
-            </h1>
-            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
-              {portal.tagline}. {portal.description}
-            </p>
+        {showWelcome ? (
+          <div className="flex items-start gap-4">
+            <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-teal-700 ring-1 ring-slate-200 sm:flex">
+              <PortalIcon role={portal.key} className="h-5.5 w-5.5" />
+            </span>
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+                Welcome back, {firstName}
+              </h1>
+              <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
+                {portal.tagline}. {portal.description}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="mt-7">{children}</div>
+        ) : null}
+        <div className={showWelcome ? "mt-7" : ""}>{children}</div>
       </main>
     </div>
   );
