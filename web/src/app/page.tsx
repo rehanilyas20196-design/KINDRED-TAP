@@ -4,7 +4,7 @@ import { PortalIcon } from "@/components/portal-icon";
 import { Logo } from "@/components/logo";
 import { Icon } from "@/components/icons";
 import type { IconName } from "@/components/icons";
-import { HeroScene } from "@/components/hero-visual";
+import { KindredTapAnimation } from "@/components/kindred-tap-animation";
 
 const TRUST = [
   "Six dedicated portals",
@@ -184,11 +184,11 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* Interactive 3D session room — the reference scene, kept. */}
+            {/* Animated Kindred Tap logo */}
             <div>
-              <div className="card rounded-xl p-4 shadow-none sm:p-5">
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-white sm:aspect-[3/2]">
-                  <HeroScene className="absolute inset-0 h-full w-full" />
+              <div className="p-4 sm:p-5">
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-white border-0 sm:aspect-[3/2]">
+                  <KindredTapAnimation className="h-full w-full" />
                 </div>
               </div>
             </div>
@@ -302,6 +302,21 @@ export default function Home() {
                 </div>
               </article>
             ))}
+          </div>
+
+          {/* Explainer video */}
+          <div className="mt-12 flex justify-center">
+            <div className="w-full max-w-4xl rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <video
+                  src="/kindred-tap-explainer-video.mp4"
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-auto block"
+                />
+            </div>
           </div>
         </section>
 

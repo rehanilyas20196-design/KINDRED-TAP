@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Figtree, IBM_Plex_Mono, Geist } from "next/font/google";
+import { Figtree, IBM_Plex_Mono, Geist, Oswald, Source_Sans_3 } from "next/font/google";
 import { RevealObserver, SmoothScroll } from "@/components/motion";
 import { AssistantDock } from "@/components/assistant/assistant-dock";
 import "@bible-strong/avatar-react/styles.css";
@@ -21,6 +21,20 @@ const figtree = Figtree({
   display: "swap",
 });
 
+const oswald = Oswald({
+  variable: "--font-oswald",
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+});
+
+const sourceSans = Source_Sans_3({
+  variable: "--font-source-sans",
+  subsets: ["latin"],
+  weight: ["300"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Kindred Tap",
@@ -34,7 +48,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", plexMono.variable, figtree.variable, "font-sans", geist.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        plexMono.variable,
+        figtree.variable,
+        oswald.variable,
+        sourceSans.variable,
+        "font-sans",
+        geist.variable,
+      )}
     >
       <body className="min-h-full flex flex-col">
         <a

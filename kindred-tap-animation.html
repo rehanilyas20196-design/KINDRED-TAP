@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kindred Tap – Logo Animation</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Source+Sans+3:wght@300&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffffff;--ink:#000000;--leaf:#6aa50d;--muted:#6b6b6b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10130d;--ink:#ffffff;--leaf:#7dbd1c;--muted:#9aa090;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10130d;--ink:#ffffff;--leaf:#7dbd1c;--muted:#9aa090;color-scheme:dark}
+html,body{height:100%;margin:0}
+body{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Source Sans 3",Arial,sans-serif}
+svg{width:min(88vw,640px);height:auto;overflow:visible}
+.leaf{fill:var(--leaf);transform-box:fill-box;transform-origin:50% 100%;opacity:0;transform:scale(0) rotate(-8deg)}
+.l-left{transform-origin:100% 100%}
+.l-right{transform-origin:0% 100%}
+.go .leaf{animation:grow .9s cubic-bezier(.2,1.3,.4,1) forwards, sway 5s ease-in-out 2.2s infinite}
+.go .l-left{animation-delay:.2s,2.4s}
+.go .l-right{animation-delay:.4s,2.6s}
+.go .l-top{animation-delay:.7s,2.8s}
+@keyframes grow{to{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+.word{fill:var(--leaf);font-family:"Source Sans 3",Arial,sans-serif;font-weight:300;font-size:262px;opacity:0;letter-spacing:40px}
+.go .word{animation:word 1.4s ease-out 1.1s forwards}
+@keyframes word{from{opacity:0;letter-spacing:40px}to{opacity:1;letter-spacing:0}}
+.tap{fill:var(--ink);font-family:Oswald,Impact,"Arial Narrow",sans-serif;font-weight:700;font-size:290px;opacity:0;transform:translateY(40px)}
+.go .tap{animation:rise .8s cubic-bezier(.2,.9,.3,1) 2s forwards}
+@keyframes rise{to{opacity:1;transform:translateY(0)}}
+button{margin-top:24px;font:inherit;font-size:15px;color:var(--leaf);background:none;border:1.5px solid var(--leaf);border-radius:999px;padding:8px 22px;cursor:pointer}
+button:hover{background:var(--leaf);color:var(--bg)}
+@media (prefers-reduced-motion:reduce){.go .leaf,.go .word,.go .tap{animation-duration:.01s;animation-delay:0s!important}}
+</style>
+</head>
+<body>
+<svg id="logo" viewBox="440 540 1060 700" role="img" aria-label="Kindred Tap logo">
+  <path class="leaf l-top" d="M965 563C925 598 915 660 965 707C1015 660 1005 598 965 563Z"/>
+  <path class="leaf l-left" d="M850 661C910 655 958 690 953 764C890 768 845 725 850 661Z"/>
+  <path class="leaf l-right" d="M1081 661C1021 655 973 690 978 764C1041 768 1086 725 1081 661Z"/>
+  <text class="word" x="471" y="965" textLength="994" lengthAdjust="spacingAndGlyphs">KINDRED</text>
+  <text class="tap" x="816" y="1217" textLength="296" lengthAdjust="spacingAndGlyphs">TAP</text>
+</svg>
+<button id="replay" type="button">Replay</button>
+<script>
+const svg=document.getElementById('logo');
+function play(){svg.classList.remove('go');void svg.getBoundingClientRect();svg.classList.add('go')}
+document.getElementById('replay').addEventListener('click',play);
+play();
+</script>
+</body>
+</html>
