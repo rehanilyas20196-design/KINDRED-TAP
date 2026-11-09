@@ -58,13 +58,20 @@ const ROLE_THEMES: Record<Role, RoleTheme> = {
     badgeClass: "bg-[#FFEFC4] text-[#086288] border border-[#f0dfa8]",
     highlightText: "Referral tracking · Outcome metrics",
   },
+  admin: {
+    category: "oversight",
+    categoryLabel: "Platform Oversight",
+    badgeLabel: "Admin Portal",
+    badgeClass: "bg-[#086288] text-[#FFEFC4]",
+    highlightText: "Review accounts · Manage platform",
+  },
 };
 
 const CATEGORIES: { id: CategoryFilter; label: string; count: number }[] = [
-  { id: "all", label: "All Portals", count: 5 },
+  { id: "all", label: "All Portals", count: 7 },
   { id: "individuals", label: "Individuals", count: 1 },
   { id: "care", label: "Therapists & Peers", count: 2 },
-  { id: "oversight", label: "Clinical Oversight", count: 1 },
+  { id: "oversight", label: "Clinical Oversight", count: 3 },
   { id: "clinic", label: "Partner Clinics", count: 1 },
 ];
 

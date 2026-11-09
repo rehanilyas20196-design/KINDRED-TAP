@@ -42,6 +42,13 @@ const GLYPHS: Record<Role, ReactNode> = {
       <path d="M7 8h4M7 12h4M7 16h4M17 13h.01M17 17h.01" />
     </>
   ),
+  admin: (
+    <>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+      <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+      <path d="M12 14.5v2" />
+    </>
+  ),
 };
 
 export function PortalIcon({ role, className }: { role: Role; className?: string }) {

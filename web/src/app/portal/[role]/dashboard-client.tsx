@@ -425,7 +425,7 @@ function ClinicDashboard({ user, portal }: { user: AuthUser; portal: PortalMeta 
   return <ClinicHome user={user} portal={portal} />;
 }
 
-function AdminDashboard({ portal }: { user: AuthUser; portal: PortalMeta }) {
+function AdminDashboard({}: { user: AuthUser; portal: PortalMeta }) {
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4 border-t border-slate-200 pt-10">
@@ -446,7 +446,7 @@ function AdminDashboard({ portal }: { user: AuthUser; portal: PortalMeta }) {
         >
           <div className="flex items-start gap-4">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-100">
-              <Icon name="shield" className="h-6 w-6" />
+              <Icon name="lock" className="h-6 w-6" />
             </span>
             <div className="min-w-0">
               <h3 className="text-base font-semibold text-slate-900">Admin review panel</h3>
