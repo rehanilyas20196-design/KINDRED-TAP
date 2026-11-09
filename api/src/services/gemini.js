@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
+import { env } from "../env.js";
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = env.geminiApiKey;
 
 if (!apiKey) {
   console.warn("[gemini] GEMINI_API_KEY is not configured");
@@ -9,6 +10,13 @@ if (!apiKey) {
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 const EMBEDDING_MODEL = "gemini-embedding-2";
+
+/**
+ * Text model used for grounded answer generation. Overridable because the
+ * available model names move and differ per account, so a wrong name should be
+ * a config fix, not a code change.
+ */
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash";
 
 /**
  * Create a semantic embedding for text.
@@ -76,6 +84,83 @@ export function cosineSimilarity(a, b) {
   }
 
   return dot / (Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB));
+}
+
+/**
+ * Embed many texts in one request. Used when indexing the knowledge base,
+ * where a document becomes dozens of chunks that share one API round trip.
+ *
+ * The order of the returned vectors matches the order of `texts`.
+ */
+export async function generateEmbeddings(texts) {
+  if (!Array.isArray(texts) || texts.length === 0) {
+    throw new Error("Texts must be a non-empty array.");
+  }
+
+  if (!ai) {
+    throw new Error("Gemini API is not configured.");
+  }
+
+  const trimmed = texts.map((text) => String(text ?? "").trim());
+  if (trimmed.some((text) => text === "")) {
+    throw new Error("Cannot create an embedding from empty text.");
+  }
+
+  const response = await ai.models.embedContent({
+    model: EMBEDDING_MODEL,
+    contents: trimmed,
+  });
+
+  const vectors = response?.embeddings;
+
+  if (!Array.isArray(vectors) || vectors.length !== trimmed.length) {
+    throw new Error("Gemini returned the wrong number of embeddings.");
+  }
+
+  return vectors.map((vector) => vector.values);
+}
+
+/** Whether the API key is configured, for callers that can degrade gracefully. */
+export function isConfigured() {
+  return Boolean(ai);
+}
+
+/**
+ * Plain text completion. Kept deliberately bare: no tools, no function
+ * calling, no code execution. Callers decide what the model is allowed to
+ * see; the model is never allowed to act.
+ */
+export async function generateText({
+  prompt,
+  systemInstruction,
+  temperature = 0.2,
+  maxOutputTokens = 700,
+}) {
+  if (!prompt || !prompt.trim()) {
+    throw new Error("Cannot generate text from an empty prompt.");
+  }
+
+  if (!ai) {
+    throw new Error("Gemini API is not configured.");
+  }
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: prompt,
+    config: {
+      ...(systemInstruction ? { systemInstruction } : {}),
+      temperature,
+      maxOutputTokens,
+    },
+  });
+
+  const text = response?.text;
+
+  if (typeof text !== "string" || text.trim() === "") {
+    throw new Error("Gemini returned an empty answer.");
+  }
+
+  return text.trim();
 }
 
 /**

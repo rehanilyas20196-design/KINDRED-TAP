@@ -182,8 +182,8 @@ export default function QrInviteCard({ role }: { role: InviteRole }) {
     doc.write(
       `<!doctype html><html><head><title>Kindred Tap QR invite</title>` +
         `<style>body{font-family:system-ui,sans-serif;text-align:center;padding:48px}` +
-        `h1{font-size:18px}img{width:320px;height:320px}p{color:#555;font-size:12px;max-width:420px;margin:12px auto}` +
-        `.code{font-family:monospace;font-size:12px;color:#333}</style></head><body>` +
+`h1{font-size:18px}img{width:320px;height:320px}p{color:#3d4557;font-size:12px;max-width:420px;margin:12px auto}` +
+`.code{font-family:monospace;font-size:12px;color:#0b1b3d}</style></head><body>` +
         `<h1>Kindred Tap — ${rolePortal} invite</h1>` +
         `<img src="${qrDataUrl}" alt="QR code" />` +
         `<p>Scan with a phone camera to request access. This code is one-time and still needs the account owner's approval.</p>` +

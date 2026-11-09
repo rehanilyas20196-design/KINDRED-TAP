@@ -113,7 +113,7 @@ export default function TherapyScene({
       onPointerDown={markInteracted}
       className={`group relative select-none overflow-hidden ${
         isFullscreen
-          ? "fixed inset-0 z-50 h-screen w-screen bg-[radial-gradient(130%_95%_at_50%_15%,#f0fdfa_0%,#f8fafc_55%,#ffffff_100%)]"
+          ? "fixed inset-0 z-50 h-screen w-screen bg-[radial-gradient(130%_95%_at_50%_15%,#f0f3fa_0%,#f8fafc_55%,#ffffff_100%)]"
           : className ?? ""
       }`}
     >

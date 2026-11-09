@@ -7,7 +7,7 @@ const TherapyScene = dynamic(() => import("./therapy-scene"), {
   loading: () => (
     <div
       aria-hidden="true"
-      className="absolute inset-0 animate-pulse-soft bg-[radial-gradient(120%_90%_at_50%_20%,#eef7f5_0%,#ffffff_70%)]"
+      className="absolute inset-0 animate-pulse-soft bg-[radial-gradient(120%_90%_at_50%_20%,#f0f3fa_0%,#ffffff_70%)]"
     />
   ),
 });

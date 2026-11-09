@@ -44,22 +44,32 @@ export const env = {
   adminPassword: process.env.ADMIN_PASSWORD?.trim() || null,
 };
 
-if (env.nodeEnv === "production" && env.jwtSecret === "dev-only-change-me") {
-  throw new Error("JWT_SECRET must be set to a real secret in production.");
+/**
+ * Configuration that must hold before the API serves a request.
+ *
+ * Called from the server's init() rather than at module load: a serverless
+ * function that throws while importing dies before the CORS middleware and the
+ * error handler exist, so the caller sees an opaque platform failure (and the
+ * browser sees a CORS error) instead of the actual problem.
+ */
+export function assertProductionConfig() {
+  if (env.nodeEnv === "production" && env.jwtSecret === "dev-only-change-me") {
+    throw new Error("JWT_SECRET must be set to a real secret in production.");
+  }
+
+  // A Supabase project URL (https://...supabase.co) is a REST endpoint, not a
+  // database: passing it here produces a connection timeout that looks like a
+  // network fault. Fail with the actual mistake instead.
+  if (env.databaseUrl && /^https?:\/\//i.test(env.databaseUrl)) {
+    throw new Error(
+      "DATABASE_URL must be a postgres:// connection string (Supabase pooler), " +
+        "not an https:// project URL."
+    );
+  }
 }
 
 if (env.nodeEnv === "production" && !env.adminPasswordHash && env.adminPassword) {
   console.warn(
     "[env] ADMIN_PASSWORD is plain text. Prefer ADMIN_PASSWORD_HASH (a bcrypt hash) in production."
-  );
-}
-
-// A Supabase project URL (https://...supabase.co) is a REST endpoint, not a
-// database: passing it here produces a connection timeout that looks like a
-// network fault. Fail with the actual mistake instead.
-if (env.databaseUrl && /^https?:\/\//i.test(env.databaseUrl)) {
-  throw new Error(
-    "DATABASE_URL must be a postgres:// connection string (Supabase pooler), " +
-      "not an https:// project URL."
   );
 }

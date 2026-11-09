@@ -1,446 +1,452 @@
 import Link from "next/link";
-import { ETHICS_VERSION } from "@/lib/portals";
+import { PORTALS, loginPath, signupPath } from "@/lib/portals";
+import { PortalIcon } from "@/components/portal-icon";
 import { Logo } from "@/components/logo";
+import { Icon } from "@/components/icons";
+import type { IconName } from "@/components/icons";
+import BlurText from "@/components/BlurText";
 import { HeroScene } from "@/components/hero-visual";
-import { PortalShowcase } from "@/components/portal-showcase";
 
-const TRUST_TAGS = [
-  "🔒 Encrypted Rooms",
-  `⚖️ Ethics v${ETHICS_VERSION}`,
-  "🛡️ Clinical Oversight",
-  "⚡ Instant Matching",
+const TRUST = [
+  "Six dedicated portals",
+  "Ethical agreement built in",
+  "Nothing shared without consent",
 ];
 
-const METRICS = [
-  { value: "6", label: "Dedicated Portals", note: "Isolated workspaces" },
-  { value: "100%", label: "Consent-Governed", note: "No unapproved sharing" },
-  { value: "2 mins", label: "Plain Intake", note: "Zero medical jargon" },
-  { value: "24/7", label: "Safety Triage", note: "Supervisory oversight" },
-];
-
-const STEPS = [
+const STEPS: { title: string; body: string; icon: IconName }[] = [
   {
-    num: "01",
-    title: "Check In",
-    desc: "A brief, plain-language check-in about how you feel today.",
+    title: "Assessment",
+    body: "A short, plain-language check-in about how you have been feeling and what you are looking for.",
+    icon: "assessments",
   },
   {
-    num: "02",
-    title: "In Your Words",
-    desc: "Share your situation naturally. Only what you choose to disclose.",
+    title: "Describe your situation",
+    body: "In your own words, without a form full of clinical jargon. Only what you choose to share.",
+    icon: "clients",
   },
   {
-    num: "03",
-    title: "Match & Begin",
-    desc: "Connect to peer supporters or therapists in an encrypted room.",
+    title: "Match and begin",
+    body: "We route you to the right kind of support — peer, therapeutic or clinical — and the conversation starts in a private room.",
+    icon: "messages",
   },
 ];
 
-const PRINCIPLES = [
+const PRINCIPLES: { title: string; body: string; icon: IconName }[] = [
   {
-    title: "Role Isolation",
-    desc: "Every portal has its own account and permissions. Records never cross boundaries.",
+    title: "Ethics are part of sign-up",
+    body: "Supporters, therapists, advisors, supervisors and clinics accept a versioned ethical agreement before they can work.",
+    icon: "ethics",
   },
   {
-    title: "Mandatory Ethics",
-    desc: `All providers and clinics accept Ethical Agreement v${ETHICS_VERSION} before practice.`,
+    title: "Consent before anything moves",
+    body: "Profiles, notes and matches are only visible to the people taking part in them. Nothing is shared on your behalf.",
+    icon: "lock",
   },
   {
-    title: "Strict Consent",
-    desc: "Notes, profiles, and sessions belong to you. Nothing is shared without approval.",
+    title: "Someone is always watching the standard",
+    body: "Clinical advisors and supervisors review escalations, supervise practitioners and keep the guidelines current.",
+    icon: "supervision",
   },
   {
-    title: "Active Supervision",
-    desc: "Licensed clinical supervisors review safety escalations and quality standards.",
+    title: "Every portal has its own door",
+    body: "Separate accounts, separate workspaces, separate permissions. Your therapist never sees a clinic's records by accident.",
+    icon: "clients",
   },
 ];
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3.5 w-3.5 text-teal-600"
+      aria-hidden="true"
+    >
+      <path d="m5 12.5 4.5 4.5L19 7" />
+    </svg>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="min-h-dvh flex flex-col bg-[#FAF6EE] text-[#0B1B3D] font-sans antialiased selection:bg-[#FFEAE8] selection:text-[#0B1B3D]">
-      {/* ---------------------------------------------------------------- */}
-      {/* Crisis Helpline Ribbon (Cream & Coral)                          */}
-      {/* ---------------------------------------------------------------- */}
-      <div className="border-b border-[#E5D9C5] bg-[#F2EAD9] px-4 py-2 text-center text-xs text-[#0B1B3D]/75">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-1">
-          <span className="font-semibold text-[#0B1B3D]">Crisis Notice:</span>
-          <span>In immediate danger or acute distress? Call or text</span>
-          <a href="tel:988" className="font-bold text-[#FF6B6B] hover:underline">
-            988
-          </a>
-          <span>for free, confidential 24/7 support.</span>
-        </div>
-      </div>
+    <div className="relative min-h-dvh overflow-x-clip bg-slate-100">
+      {/* One restrained wash behind the hero — a tint, not a gradient for
+          its own sake. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(120%_80%_at_50%_-10%,var(--color-teal-50)_0%,transparent_70%)]"
+      />
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Header (Cream, Navy & Coral)                                     */}
-      {/* ---------------------------------------------------------------- */}
-      <header className="sticky top-0 z-[100] transition-colors duration-200 border-b border-[#E5D9C5] bg-[#FAF6EE]/90 backdrop-blur-md">
-        <nav className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between gap-6">
-          <Link className="flex items-center gap-2.5 shrink-0" href="/">
-            <Logo className="h-8 w-auto" />
-            <span className="leading-tight">
-              <span className="block text-[15px] font-semibold tracking-tight text-[#0B1B3D]">
-                Kindred Tap
-              </span>
-              <span className="block font-mono text-[10px] tracking-[0.08em] text-[#0B1B3D]/50 uppercase">
-                Care · Connect · Heal
-              </span>
-            </span>
-          </Link>
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/70">
+        <div className="mx-auto w-full max-w-6xl px-5 sm:px-8">
+          <div className="flex items-center justify-between gap-3 py-3 sm:gap-4">
+            <Link href="/" className="flex shrink-0 items-center rounded-lg">
+              <Logo className="h-9 w-auto sm:h-10" />
+            </Link>
 
-          <div className="hidden md:flex items-center gap-7">
+            <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+              <Link
+                href="/#how-it-works"
+                className="flex min-h-[44px] items-center rounded-lg px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                How it works
+              </Link>
+              <Link
+                href="/#portals"
+                className="flex min-h-[44px] items-center rounded-lg px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                Portals
+              </Link>
+              <Link
+                href="/#principles"
+                className="flex min-h-[44px] items-center rounded-lg px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                Our principles
+              </Link>
+            </nav>
+
+            <div className="flex shrink-0 items-center gap-2">
+              <Link href="/login" className="btn btn-ghost btn-sm whitespace-nowrap">
+                Log in
+              </Link>
+              <Link href="/signup" className="btn btn-primary btn-sm whitespace-nowrap">
+                Create account
+              </Link>
+            </div>
+          </div>
+
+          <nav
+            aria-label="Sections"
+            className="no-scrollbar -mx-5 flex gap-1 overflow-x-auto px-5 pb-1 sm:-mx-8 sm:px-8 md:hidden"
+          >
             <Link
-              className="text-sm font-medium text-[#0B1B3D] hover:text-[#FF6B6B] transition-colors px-1 py-2"
-              href="#how-it-works"
+              href="/#how-it-works"
+              className="flex min-h-[44px] shrink-0 items-center rounded-lg px-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
             >
-              How It Works
+              How it works
             </Link>
             <Link
-              className="text-sm font-medium text-[#0B1B3D] hover:text-[#FF6B6B] transition-colors px-1 py-2"
-              href="#portals"
+              href="/#portals"
+              className="flex min-h-[44px] shrink-0 items-center rounded-lg px-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
             >
               Portals
             </Link>
             <Link
-              className="text-sm font-medium text-[#0B1B3D] hover:text-[#FF6B6B] transition-colors px-1 py-2"
-              href="#principles"
+              href="/#principles"
+              className="flex min-h-[44px] shrink-0 items-center rounded-lg px-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
             >
-              Principles
+              Our principles
             </Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              className="text-sm font-medium text-[#0B1B3D] hover:text-[#FF6B6B] px-3 py-2 transition-colors"
-              href="/login"
-            >
-              Log In
-            </Link>
-            <Link
-              className="inline-flex items-center rounded-md bg-[#0B1B3D] text-[#FAF6EE] text-sm font-medium px-[18px] py-[9px] hover:bg-[#FF6B6B] hover:text-white transition-colors"
-              href="/signup"
-            >
-              Get Started
-            </Link>
-          </div>
-        </nav>
+          </nav>
+        </div>
       </header>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Hero Section                                                     */}
-      {/* ---------------------------------------------------------------- */}
-      <main id="main-content" className="flex-1 outline-none">
-        <section className="border-b border-[#E5D9C5] bg-[#FAF6EE]">
-          <div className="mx-auto max-w-6xl px-6 py-12 md:py-20">
-            <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-              {/* Left Column: Short, Punchy Copy */}
-              <div>
-                <div>
-                  <span className="badge-tilted">Mental Health Platform</span>
+      <main id="main-content" tabIndex={-1} className="relative outline-none">
+        {/* ---------------------------------------------------------------- */}
+        {/* Hero                                                              */}
+        {/* ---------------------------------------------------------------- */}
+        <section className="mx-auto w-full max-w-6xl px-5 pb-16 pt-12 sm:px-8 sm:pb-24 sm:pt-20">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+            <div>
+              <p className="eyebrow reveal reveal-nav" data-delay="0.05">
+                Mental health support platform
+              </p>
+              <h1
+                className="reveal reveal-up mt-4 max-w-xl text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl sm:leading-[1.07] lg:text-[3.4rem]"
+                data-delay="0.1"
+              >
+                Care that is organised around the people who give it.
+              </h1>
+              <BlurText
+                text="Six portals, one per role. People seeking support, peer supporters, therapists, clinical advisors, supervisors and partner clinics each sign in to their own workspace — so the right people see the right things, and nobody else does."
+                className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg"
+                animationFrom={{ filter: "blur(6px)", opacity: 0, y: 10 }}
+                delay={26}
+                stepDuration={0.3}
+              />
+
+              <div className="reveal reveal-up mt-8 flex flex-wrap items-center gap-3" data-delay="0.26">
+                <Link href="/signup" className="btn btn-primary btn-lg">
+                  Create your account
+                </Link>
+                <Link href="/login" className="btn btn-secondary btn-lg">
+                  Sign in
+                </Link>
+              </div>
+
+              <ul
+                className="reveal reveal-up mt-9 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-medium text-slate-500"
+                data-delay="0.34"
+              >
+                {TRUST.map((item) => (
+                  <li key={item} className="inline-flex items-center gap-2">
+                    <CheckIcon />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Interactive 3D session room — the reference scene, kept. */}
+            <div className="reveal reveal-right" data-delay="0.2">
+              <div className="card p-4 shadow-sm sm:p-5">
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-white sm:aspect-[3/2]">
+                  <HeroScene className="absolute inset-0 h-full w-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* How it works                                                      */}
+        {/* ---------------------------------------------------------------- */}
+        <section
+          id="how-it-works"
+          aria-labelledby="how-heading"
+          className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:py-20 md:scroll-mt-24"
+        >
+          <div className="max-w-2xl">
+            <p className="eyebrow reveal reveal-nav">How it works</p>
+            <h2
+              id="how-heading"
+              className="reveal reveal-up mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+            >
+              Three steps, and none of them ask you to know the right word.
+            </h2>
+            <p className="reveal reveal-up mt-3 text-sm leading-6 text-slate-600 sm:text-base" data-delay="0.08">
+              The assessment is written for a person having a hard week, not for a clinician
+              filling in a form. Everything that follows is built from what you actually said.
+            </p>
+          </div>
+
+          <ol className="mt-10 grid gap-4 sm:grid-cols-3">
+            {STEPS.map((step, index) => (
+              <li
+                key={step.title}
+                className="card reveal reveal-up p-6"
+                data-delay={`${index * 0.08}`}
+              >
+                <span className="text-xs font-semibold tabular-nums text-teal-700">
+                  Step {index + 1}
+                </span>
+                <h3 className="mt-2 text-base font-semibold text-slate-900">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Portals                                                           */}
+        {/* ---------------------------------------------------------------- */}
+        <section
+          id="portals"
+          aria-labelledby="portals-heading"
+          className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:py-20 md:scroll-mt-24"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-4 border-t border-slate-200 pt-10">
+            <div className="max-w-2xl">
+              <p className="eyebrow reveal reveal-nav">Choose your portal</p>
+              <h2
+                id="portals-heading"
+                className="reveal reveal-up mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+              >
+                Every role works from its own account and its own workspace.
+              </h2>
+            </div>
+            <p className="reveal reveal-up max-w-xs text-sm leading-6 text-slate-500" data-delay="0.08">
+              Pick the door that matches what you do here. You can hold only the account you
+              signed up for.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {PORTALS.map((portal, index) => (
+              <article
+                key={portal.key}
+                className="card card-interactive reveal reveal-up flex flex-col p-5 sm:p-6"
+                data-delay={`${(index % 3) * 0.07}`}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-100">
+                    <PortalIcon role={portal.key} className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-slate-900">{portal.portal}</h3>
+                    <p className="text-xs leading-5 text-slate-500">{portal.tagline}</p>
+                  </div>
                 </div>
 
-                <h1 className="mt-6 font-display text-[38px] leading-[1.12] md:text-[54px] md:leading-[1.08] font-bold tracking-tight text-[#0B1B3D]">
-                  Care built around the people who give it.
-                </h1>
-
-                <p className="mt-4 text-base md:text-lg leading-relaxed text-[#0B1B3D]/70 max-w-lg font-normal">
-                  Six dedicated portals. One confidential workspace per role — ensuring the right
-                  people see the right things, and nobody else does.
+                <p className="mt-4 border-t border-slate-200 pt-4 text-sm leading-6 text-slate-600">
+                  {portal.description}
                 </p>
 
-                {/* Primary Button Group */}
-                <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/signup"
-                    className="inline-flex items-center rounded-md bg-[#0B1B3D] text-[#FAF6EE] text-sm font-medium px-[20px] py-[12px] hover:bg-[#FF6B6B] hover:text-white transition-colors shadow-xs"
-                  >
-                    Get Started
-                  </Link>
-                  <Link
-                    href="#portals"
-                    className="inline-flex items-center rounded-md bg-[#FFEAE8] text-[#0B1B3D] text-sm font-medium px-[20px] py-[12px] hover:bg-[#FFD0CC] border border-[#FFD0CC] transition-colors"
-                  >
-                    Browse Portals
-                  </Link>
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center rounded-md border border-[#E5D9C5] bg-white text-[#0B1B3D] text-sm font-medium px-[20px] py-[12px] hover:border-[#0B1B3D] transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                </div>
-
-                {/* Trust Tags */}
-                <div className="mt-8 flex flex-wrap items-center gap-2">
-                  {TRUST_TAGS.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-md border border-[#E5D9C5] bg-[#F2EAD9] px-2.5 py-1 text-xs font-mono text-[#0B1B3D]/75"
-                    >
-                      {tag}
-                    </span>
+                <ol className="mt-4 flex-1 space-y-1.5">
+                  {portal.journey.map((step, stepIndex) => (
+                    <li key={step} className="flex gap-2 text-xs leading-5 text-slate-500">
+                      <span className="font-semibold tabular-nums text-teal-700">
+                        {stepIndex + 1}.
+                      </span>
+                      {step}
+                    </li>
                   ))}
-                </div>
-              </div>
+                </ol>
 
-              {/* Right Column: Hero 3D Scene */}
-              <div>
-                <div className="rounded-xl border border-[#E5D9C5] bg-white p-2 shadow-xs">
-                  <div className="mb-2 flex items-center justify-between px-2 text-xs">
-                    <span className="font-semibold text-[#0B1B3D]">Private Consultation Room</span>
-                    <span className="font-mono text-[11px] text-[#0B1B3D]/50">360° Interactive</span>
-                  </div>
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#FAF6EE] sm:aspect-[16/11]">
-                    <HeroScene className="absolute inset-0 h-full w-full" />
-                  </div>
+                <div className="mt-5 flex gap-2">
+                  <Link href={loginPath(portal.key)} className="btn btn-secondary flex-1 whitespace-nowrap">
+                    Log in
+                  </Link>
+                  <Link href={signupPath(portal.key)} className="btn btn-primary flex-1 whitespace-nowrap">
+                    Sign up
+                  </Link>
                 </div>
-              </div>
-            </div>
+              </article>
+            ))}
           </div>
         </section>
 
         {/* ---------------------------------------------------------------- */}
-        {/* Metric Strip                                                     */}
+        {/* Principles                                                        */}
         {/* ---------------------------------------------------------------- */}
-        <section className="border-b border-[#E5D9C5] bg-[#F2EAD9]/70 py-8">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-              {METRICS.map((m) => (
-                <div key={m.label} className="border-l-2 border-[#FF6B6B] pl-4">
-                  <span className="font-display text-2xl md:text-3xl font-bold text-[#0B1B3D]">
-                    {m.value}
-                  </span>
-                  <p className="text-xs font-semibold text-[#0B1B3D]">{m.label}</p>
-                  <p className="text-[11px] text-[#0B1B3D]/50">{m.note}</p>
+        <section
+          id="principles"
+          aria-labelledby="principles-heading"
+          className="mx-auto w-full max-w-6xl scroll-mt-32 px-5 py-14 sm:px-8 sm:py-20 md:scroll-mt-24"
+        >
+          <div className="max-w-2xl">
+            <p className="eyebrow reveal reveal-nav">Our principles</p>
+            <h2
+              id="principles-heading"
+              className="reveal reveal-up mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
+            >
+              The rules the product is built to keep.
+            </h2>
+          </div>
+
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            {PRINCIPLES.map((item, index) => (
+              <li
+                key={item.title}
+                className="card reveal reveal-up flex gap-4 p-6"
+                data-delay={`${(index % 2) * 0.08}`}
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-teal-700 ring-1 ring-inset ring-slate-200">
+                  <Icon name={item.icon} className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-500">{item.body}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* ---------------------------------------------------------------- */}
-        {/* How It Works (Concise)                                           */}
+        {/* Closing call to action                                            */}
         {/* ---------------------------------------------------------------- */}
-        <section id="how-it-works" className="border-b border-[#E5D9C5] bg-[#FAF6EE] py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="max-w-xl">
-              <span className="font-mono text-xs font-semibold text-[#FF6B6B] uppercase tracking-wider">
-                Process
-              </span>
-              <h2 className="mt-2 font-display text-3xl md:text-4xl font-bold text-[#0B1B3D]">
-                Three simple steps. No clinical paperwork.
-              </h2>
-            </div>
-
-            <div className="mt-10 grid gap-6 sm:grid-cols-3">
-              {STEPS.map((s) => (
-                <div
-                  key={s.title}
-                  className="rounded-xl border border-[#E5D9C5] bg-white p-6 shadow-xs hover:border-[#FF6B6B] transition-colors"
-                >
-                  <span className="font-mono text-xs font-bold text-[#FF6B6B]">{s.num}</span>
-                  <h3 className="mt-2 font-display text-lg font-bold text-[#0B1B3D]">{s.title}</h3>
-                  <p className="mt-1.5 text-xs text-[#0B1B3D]/65 leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Choose Your Portal                                                */}
-        {/* ---------------------------------------------------------------- */}
-        <section id="portals" className="border-b border-[#E5D9C5] bg-[#F2EAD9]/30 py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="max-w-xl">
-              <span className="font-mono text-xs font-semibold text-[#FF6B6B] uppercase tracking-wider">
-                Workspaces
-              </span>
-              <h2 className="mt-2 font-display text-3xl md:text-4xl font-bold text-[#0B1B3D]">
-                Six dedicated portals. One account each.
-              </h2>
-              <p className="mt-1.5 text-xs text-[#0B1B3D]/65">
-                Select the role that fits your work. Permissions are strictly isolated.
-              </p>
-            </div>
-
-            <PortalShowcase />
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Principles                                                       */}
-        {/* ---------------------------------------------------------------- */}
-        <section id="principles" className="border-b border-[#E5D9C5] bg-[#FAF6EE] py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="max-w-xl">
-              <span className="font-mono text-xs font-semibold text-[#FF6B6B] uppercase tracking-wider">
-                Commitments
-              </span>
-              <h2 className="mt-2 font-display text-3xl md:text-4xl font-bold text-[#0B1B3D]">
-                Built on rules we never break.
-              </h2>
-            </div>
-
-            <div className="mt-10 grid gap-5 sm:grid-cols-2">
-              {PRINCIPLES.map((p) => (
-                <div
-                  key={p.title}
-                  className="rounded-xl border border-[#E5D9C5] bg-white p-6 hover:border-[#0B1B3D] transition-colors"
-                >
-                  <h3 className="font-display text-base font-bold text-[#0B1B3D]">{p.title}</h3>
-                  <p className="mt-1.5 text-xs text-[#0B1B3D]/65 leading-relaxed">{p.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Closing Call to Action (Navy & Coral)                            */}
-        {/* ---------------------------------------------------------------- */}
-        <section className="bg-[#FAF6EE] py-16 md:py-20">
-          <div className="mx-auto max-w-4xl px-6">
-            <div className="rounded-2xl bg-[#0B1B3D] p-10 md:p-14 text-center text-[#FAF6EE] shadow-sm">
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-[#FAF6EE]">
-                Start where you are.
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-[#FAF6EE]/75">
-                Take a brief check-in. Completely confidential, free to explore, and nothing is shared
-                until you decide to connect.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center rounded-md bg-[#FF6B6B] text-white text-sm font-medium px-[22px] py-[12px] hover:bg-[#FAF6EE] hover:text-[#0B1B3D] transition-colors shadow-xs"
-                >
-                  Create Free Account
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center rounded-md border border-[#E5D9C5]/40 text-[#FAF6EE] text-sm font-medium px-[22px] py-[12px] hover:bg-white/10 transition-colors"
-                >
-                  Sign In
-                </Link>
-              </div>
+        <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8 sm:pb-24">
+          <div className="card reveal reveal-up overflow-hidden p-8 text-center sm:p-12">
+            <h2 className="mx-auto max-w-2xl text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+              Start where you actually are.
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
+              Create an account, take the assessment, and see what the matching suggests. You
+              can stop at any point, and nothing is shared until you continue.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/signup" className="btn btn-primary btn-lg">
+                Create your account
+              </Link>
+              <Link href="/login" className="btn btn-secondary btn-lg">
+                I already have one
+              </Link>
             </div>
           </div>
         </section>
       </main>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Footer (Navy, Cream & Coral)                                     */}
-      {/* ---------------------------------------------------------------- */}
-      <footer className="border-t border-[#183366] bg-[#07132C] text-[#FAF6EE]">
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-            <div className="md:col-span-1">
-              <Link className="flex items-center gap-2.5" href="/">
-                <Logo variant="onDark" className="h-8 w-auto" />
-                <span className="text-[15px] font-semibold text-[#FAF6EE]">Kindred Tap</span>
-              </Link>
-              <p className="mt-4 text-sm text-[#FAF6EE]/70 leading-relaxed max-w-xs">
-                An ethical mental health ecosystem connecting users, peer supporters, therapists,
-                and clinics.
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8">
+          <div className="flex flex-wrap items-start justify-between gap-8">
+            <div className="max-w-xs">
+              <Logo className="h-9 w-auto" />
+              <p className="mt-3 text-xs leading-5 text-slate-500">
+                A mental health support platform connecting people seeking support with peer
+                supporters, therapists, clinical teams and partner clinics.
               </p>
-              <form className="mt-5 flex gap-2">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="flex-1 min-w-0 rounded-full border border-[#183366] bg-white/5 px-[18px] py-[10px] text-sm text-[#FAF6EE] placeholder-[#FAF6EE]/40 outline-none focus:border-[#FF6B6B] transition-colors"
-                />
-                <button
-                  type="button"
-                  className="rounded-md text-sm font-medium px-[18px] py-[10px] transition-colors shrink-0 bg-[#FF6B6B] text-white hover:bg-[#FAF6EE] hover:text-[#0B1B3D]"
-                >
-                  Join
-                </button>
-              </form>
             </div>
 
-            <div>
-              <h5 className="text-sm font-semibold text-[#FAF6EE] mb-4">Portals</h5>
-              <ul className="space-y-2.5 text-sm">
-                <li>
-                  <Link href="/login/user" className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors">
-                    User Portal
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/login/supporter"
-                    className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors"
-                  >
-                    Supporter Portal
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/login/therapist"
-                    className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors"
-                  >
-                    Therapist Portal
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/login/collaborative_clinic"
-                    className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors"
-                  >
-                    Partner Clinics
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            <nav aria-label="Footer" className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Get started
+                </p>
+                <ul className="mt-2.5 space-y-1.5 text-sm">
+                  <li>
+                    <Link href="/signup" className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0">
+                      Create an account
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/login" className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0">
+                      Log in
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/login"
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                    >
+                      Choose a portal
+                    </Link>
+                  </li>
+                </ul>
+              </div>
 
-            <div>
-              <h5 className="text-sm font-semibold text-[#FAF6EE] mb-4">Governance</h5>
-              <ul className="space-y-2.5 text-sm">
-                <li>
-                  <Link href="#principles" className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors">
-                    Ethical Code v{ETHICS_VERSION}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#principles" className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors">
-                    Clinical Standards
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#principles" className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors">
-                    Safety Escalation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#principles" className="text-[#FAF6EE]/70 hover:text-[#FF6B6B] transition-colors">
-                    Privacy Protocols
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h5 className="text-sm font-semibold text-[#FAF6EE] mb-4">Crisis Help (24/7)</h5>
-              <ul className="space-y-2.5 text-sm">
-                <li>
-                  <a href="tel:988" className="font-bold text-[#FF6B6B] hover:underline">
-                    988 Suicide & Crisis Lifeline
-                  </a>
-                </li>
-                <li className="text-[#FAF6EE]/70">Text HOME to 741741</li>
-                <li className="text-[#FAF6EE]/70">Free, confidential 24/7 support</li>
-                <li className="text-xs text-[#FAF6EE]/50 mt-2">
-                  Not an emergency service. In crisis, call 988 or 911 immediately.
-                </li>
-              </ul>
-            </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  For professionals
+                </p>
+                <ul className="mt-2.5 space-y-1.5 text-sm">
+                  <li>
+                    <Link
+                      href={signupPath("supporter")}
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                    >
+                      Become a supporter
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href={signupPath("therapist")}
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                    >
+                      Join as a therapist
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href={signupPath("collaborative_clinic")}
+                      className="flex min-h-[44px] items-center text-slate-600 transition hover:text-teal-700 sm:min-h-0"
+                    >
+                      Register a clinic
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </nav>
           </div>
 
-          <div className="mt-12 pt-6 border-t border-[#183366] flex flex-wrap justify-between gap-3 text-xs text-[#FAF6EE]/50 font-mono tracking-[0.04em]">
-            <span>© {new Date().getFullYear()} Kindred Tap</span>
-            <span>Care that is organised around the people who give it.</span>
-          </div>
+          <p className="mt-9 border-t border-slate-200 pt-6 text-xs leading-5 text-slate-400">
+            Supporter, therapist, clinical and clinic portals require accepting the ethical
+            agreement before sign-up is complete.
+          </p>
         </div>
       </footer>
     </div>

@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 
-import { env } from "./env.js";
+import { assertProductionConfig, env } from "./env.js";
 import { closeDb, getDriver } from "./db/index.js";
 import { runMigrations } from "./db/migrate.js";
 import { loadColumnMap } from "./lib/schemas.js";
@@ -30,6 +30,41 @@ import adminRouter from "./routes/admin.routes.js";
 import assistantRouter from "./routes/assistant.routes.js";
 import inviteRouter from "./routes/invite.routes.js";
 
+/**
+ * Compares origins by scheme, host and port, treating www.example.com and
+ * example.com as the same site.
+ *
+ * A site is usually served on both spellings, and an allowlist that names only
+ * one of them rejects the other with a preflight that carries no CORS headers,
+ * which the browser can only report as a network error. Ports are kept, so a
+ * different localhost port is still refused.
+ */
+function originKey(value) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+    return `${url.protocol}//${host}${url.port ? `:${url.port}` : ""}`;
+  } catch {
+    return String(value).replace(/\/$/, "").toLowerCase();
+  }
+}
+
+/**
+ * The project's own site, always allowed on top of WEB_ORIGIN.
+ *
+ * A deployment that still carries the example WEB_ORIGIN
+ * (http://localhost:3000) would otherwise refuse the live site and turn every
+ * login into a CORS failure. Allowing the site itself changes nothing that the
+ * API's bearer-token auth does not already protect.
+ */
+const siteOrigins = ["https://www.kindredtap.com", "https://kindredtap.com"];
+
+const allowedOrigins = new Set([...env.webOrigin, ...siteOrigins].map(originKey));
+
+function isAllowedOrigin(origin) {
+  return !origin || allowedOrigins.has(originKey(origin));
+}
+
 export function createApp() {
   const app = express();
 
@@ -42,7 +77,7 @@ export function createApp() {
     cors({
       origin(origin, callback) {
         // Allow same-origin/non-browser callers such as curl and tests.
-        if (!origin || env.webOrigin.includes(origin)) return callback(null, true);
+        if (isAllowedOrigin(origin)) return callback(null, true);
         const err = new Error(`Origin ${origin} is not allowed`);
         err.status = 403;
         return callback(err);
@@ -53,6 +88,21 @@ export function createApp() {
 
   app.use(express.json({ limit: "256kb" }));
   app.use(express.urlencoded({ extended: true }));
+
+  // Readiness after CORS and body parsing, so a deployment that cannot start
+  // (missing JWT_SECRET, bad DATABASE_URL, unreachable database) still answers
+  // with a readable status instead of dying before any header is written.
+  app.use(async (req, res, next) => {
+    try {
+      await init();
+      next();
+    } catch (err) {
+      console.error("[api] startup failed:", err);
+      res.status(503).json({
+        error: "The API is not configured correctly. Check the server logs for the startup error.",
+      });
+    }
+  });
 
   if (env.nodeEnv !== "test") {
     app.use(morgan("dev"));
@@ -111,6 +161,8 @@ let app = null;
 function init() {
   if (!ready) {
     ready = (async () => {
+      assertProductionConfig();
+
       // Migrations are applied at build time in deployed environments; only
       // development (or an explicit MIGRATE_ON_BOOT=true) runs them here.
       if (env.migrateOnBoot) await runMigrations();
@@ -124,8 +176,9 @@ function init() {
 }
 
 /** Serverless entry: Vercel may resolve this module as the function handler. */
-export default async function handler(req, res) {
-  await init();
+export default function handler(req, res) {
+  // createApp() installs the readiness middleware, so the app exists before
+  // startup work runs and any failure is answered with CORS headers.
   return (app ??= createApp())(req, res);
 }
 
