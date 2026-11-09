@@ -19,8 +19,11 @@ import {
   type Role,
 } from "@/lib/portals";
 import { useSessionGate } from "@/lib/session-gate";
+import { emailState, passwordState, withError } from "@/lib/cubee-form";
+import { useCubeeForm } from "@/hooks/use-cubee-form";
 import {
   AuthCard,
+  AuthCubee,
   AuthLayout,
   FormAlert,
   PasswordField,
@@ -46,15 +49,38 @@ export default function LoginForm({
   const [banner, setBanner] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
+  const [accepted, setAccepted] = useState<boolean | undefined>(undefined);
   const router = useRouter();
   const { state: gate, signOut } = useSessionGate(portal.key);
+  const { mood: fieldMood } = useCubeeForm(
+    {
+      email: withError(emailState(email), errors.email),
+      password: withError(passwordState(password), errors.password),
+    },
+    accepted,
+  );
+  const hasInput = Boolean(email || password || Object.keys(errors).length);
+  const mood =
+    accepted === true
+      ? "happy"
+      : accepted === false
+        ? "angry"
+        : !hasInput
+          ? "idle"
+          : fieldMood === "angry"
+            ? "angry"
+            : "listening";
 
   function selectPortal(key: Role) {
     const next = portalFor(key);
-    if (next) setPortal(next);
+    if (next) {
+      setPortal(next);
+      setAccepted(undefined);
+    }
   }
 
   function clearFieldError(key: string) {
+    setAccepted(undefined);
     setErrors((current) => {
       if (!(key in current)) return current;
       const next = { ...current };
@@ -65,6 +91,7 @@ export default function LoginForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setAccepted(undefined);
 
     const nextErrors: Record<string, string> = {};
     if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = "Enter a valid email address";
@@ -96,10 +123,12 @@ export default function LoginForm({
       }
 
       saveSession(data.token);
+      setAccepted(true);
       setResult(data);
     } catch (error) {
       setBanner(messageFor(error));
       setErrors(toFieldErrors(error));
+      setAccepted(false);
     } finally {
       setPending(false);
     }
@@ -155,10 +184,11 @@ export default function LoginForm({
         />
       ) : (
         <AuthCard>
-          <header>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <header className="flex items-start justify-between gap-4">
+            <h1 className="min-w-0 text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
               Sign in to the {portal.portal}
             </h1>
+            <AuthCubee key={mood} mood={mood} />
           </header>
 
           <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">

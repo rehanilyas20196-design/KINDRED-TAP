@@ -9,8 +9,10 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PORTALS, type PortalMeta, type Role } from "@/lib/portals";
+import type { FormMood } from "@/lib/cubee-form";
 import { PortalIcon } from "@/components/portal-icon";
 import { Button, primaryButtonClass as uiPrimaryButtonClass } from "@/components/ui";
+import { Cubee } from "@/components/cubee";
 import { Logo } from "@/components/logo";
 
 /* ------------------------------------------------------------------ */
@@ -185,6 +187,17 @@ export function AuthCard({ children }: { children: ReactNode }) {
 /* ------------------------------------------------------------------ */
 
 export const primaryButtonClass = `${uiPrimaryButtonClass} w-full`;
+
+export function AuthCubee({ mood }: { mood: FormMood }) {
+  return (
+    <span
+      className="shrink-0 self-start animate-cubee-react"
+      aria-hidden="true"
+    >
+      <Cubee mood={mood} size={64} label="" />
+    </span>
+  );
+}
 
 interface FieldProps extends Omit<ComponentPropsWithoutRef<"input">, "className"> {
   label: string;
@@ -397,19 +410,8 @@ export function SuccessPanel({
   return (
     <AuthCard>
       <div className="flex flex-col items-center py-4 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6"
-            aria-hidden="true"
-          >
-            <path d="m5 12.5 4.5 4.5L19 7" />
-          </svg>
+        <span aria-hidden="true" className="animate-cubee-react">
+          <Cubee mood="happy" size={72} label="" />
         </span>
         <h1 className="mt-4 text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
           {title}

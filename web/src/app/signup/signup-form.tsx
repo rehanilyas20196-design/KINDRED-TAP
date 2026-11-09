@@ -19,9 +19,18 @@ import {
   type PortalMeta,
   type Role,
 } from "@/lib/portals";
+import {
+  confirmState,
+  emailState,
+  nameState,
+  newPasswordState,
+  withError,
+} from "@/lib/cubee-form";
+import { useCubeeForm } from "@/hooks/use-cubee-form";
 import { useSessionGate } from "@/lib/session-gate";
 import {
   AuthCard,
+  AuthCubee,
   AuthLayout,
   Checkbox,
   FormAlert,
@@ -53,10 +62,30 @@ export default function SignupForm({
   const [banner, setBanner] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<AuthResponse | null>(null);
+  const [accepted, setAccepted] = useState<boolean | undefined>(undefined);
   const router = useRouter();
   const { state: gate, signOut } = useSessionGate(portal?.key ?? "user");
+  const formStates = {
+    fullName: withError(nameState(fullName), errors.fullName),
+    email: withError(emailState(email), errors.email),
+    password: withError(newPasswordState(password), errors.password),
+    confirmPassword: withError(confirmState(confirmPassword, password), errors.confirmPassword),
+    role: withError(portal ? "ok" : "empty", errors.role),
+    termsAccepted: withError(termsAccepted ? "ok" : "empty", errors.termsAccepted),
+    ethicsAccepted: withError(
+      !portal?.requiresEthics || ethicsAccepted ? "ok" : "empty",
+      errors.ethicsAccepted,
+    ),
+  };
+  const { mood: formMood } = useCubeeForm(formStates, accepted);
+  const hasInput = Boolean(
+    fullName || email || password || confirmPassword || termsAccepted || ethicsAccepted ||
+      Object.keys(errors).length,
+  );
+  const mood = hasInput ? formMood : "idle";
 
   function clearFieldError(key: string) {
+    setAccepted(undefined);
     setErrors((current) => {
       if (!(key in current)) return current;
       const next = { ...current };
@@ -67,6 +96,7 @@ export default function SignupForm({
 
   function selectPortal(next: PortalMeta) {
     setPortal(next);
+    setAccepted(undefined);
     setErrors((current) =>
       Object.fromEntries(
         Object.entries(current).filter(
@@ -110,6 +140,7 @@ export default function SignupForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setAccepted(undefined);
 
     const nextErrors = validate();
     setErrors(nextErrors);
@@ -134,14 +165,17 @@ export default function SignupForm({
       if (data.user.role !== portal.key) {
         clearSession();
         setBanner(`That account was created for a different portal. Sign up for the ${portal.portal} instead.`);
+        setAccepted(false);
         return;
       }
 
       saveSession(data.token);
+      setAccepted(true);
       setResult(data);
     } catch (error) {
       setBanner(messageFor(error));
       setErrors(toFieldErrors(error));
+      setAccepted(false);
     } finally {
       setPending(false);
     }
@@ -200,13 +234,16 @@ export default function SignupForm({
         />
       ) : (
         <AuthCard>
-          <header>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
-              {portal ? `Create your ${portal.portal} account` : "Create your account"}
-            </h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {portal ? portal.tagline : "Choose your portal before entering your details."}
-            </p>
+          <header className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                {portal ? `Create your ${portal.portal} account` : "Create your account"}
+              </h1>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {portal ? portal.tagline : "Choose your portal before entering your details."}
+              </p>
+            </div>
+            <AuthCubee key={mood} mood={mood} />
           </header>
 
           <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
@@ -279,7 +316,10 @@ export default function SignupForm({
 
             <Checkbox
               checked={termsAccepted}
-              onChange={setTermsAccepted}
+              onChange={(checked) => {
+                setTermsAccepted(checked);
+                clearFieldError("termsAccepted");
+              }}
               error={errors.termsAccepted}
               label="I agree to the Terms of Service and the Privacy Policy."
             />
@@ -287,7 +327,10 @@ export default function SignupForm({
             {portal?.requiresEthics ? (
               <Checkbox
                 checked={ethicsAccepted}
-                onChange={setEthicsAccepted}
+                onChange={(checked) => {
+                  setEthicsAccepted(checked);
+                  clearFieldError("ethicsAccepted");
+                }}
                 error={errors.ethicsAccepted}
                 label={`I accept the professional code of conduct and ethical agreement (v${ETHICS_VERSION}), including confidentiality, safeguarding and escalation duties.`}
               />
