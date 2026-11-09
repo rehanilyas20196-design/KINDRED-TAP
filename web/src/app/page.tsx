@@ -262,7 +262,7 @@ export default function Home() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {PORTALS.filter((portal) => portal.key !== "clinical_supervisor").map((portal) => (
+            {PORTALS.filter((portal) => portal.key !== "clinical_supervisor" && portal.key !== "admin").map((portal) => (
               <article
                 key={portal.key}
                 className="card flex flex-col p-5 transition-colors hover:border-slate-400 sm:p-6"
