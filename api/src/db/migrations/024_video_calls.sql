@@ -30,3 +30,33 @@ CREATE INDEX IF NOT EXISTS video_calls_receiver_idx
 CREATE UNIQUE INDEX IF NOT EXISTS video_calls_active_conversation_idx
   ON video_calls (conversation_id)
   WHERE status IN ('outgoing', 'ringing', 'accepted', 'connecting', 'connected');
+
+-- ---------------------------------------------------------------------------
+-- Admin portal profile table (missing from 001_init.sql; needed for API boot)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS admin_profiles (
+  user_id              UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  phone                TEXT,
+  date_of_birth        DATE,
+  gender               TEXT,
+  pronouns             TEXT,
+  address_line1        TEXT,
+  address_line2        TEXT,
+  city                 TEXT,
+  state                TEXT,
+  country              TEXT,
+  postal_code          TEXT,
+  avatar_url           TEXT,
+  emergency_contact_name       TEXT,
+  emergency_contact_phone      TEXT,
+  emergency_contact_relation   TEXT,
+  job_title            TEXT NOT NULL,
+  organization         TEXT NOT NULL,
+  department           TEXT,
+  admin_level          TEXT NOT NULL DEFAULT 'standard'
+                       CHECK (admin_level IN ('standard', 'super_admin')),
+  qualifications       JSONB NOT NULL DEFAULT '[]'::jsonb,
+  bio                  TEXT,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -12,21 +12,20 @@ import { createServer } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
 import { verifyToken, hashToken } from "./tokens.js";
 import { sessionUserByTokenHash } from "./users.js";
-import { queryOne, query } from "./db/index.js";
+import { queryOne, query } from "../db/index.js";
 
 /** How long an unanswered incoming call rings before it is marked missed. */
 export const CALL_TIMEOUT_MS = 30_000;
 
-/** A connected, authenticated client. */
-interface Client extends WebSocket {
-  userId: string;
-  conversationId: string | null;
-}
-
 /** Map of conversation id -> set of clients in that conversation. */
-const conversationClients = new Map<string, Set<Client>>();
+const conversationClients = new Map();
 
-function clientsFor(conversationId: string): Set<Client> {
+/**
+ * Get or create the client set for a conversation.
+ * @param {string} conversationId
+ * @returns {Set<WebSocket>}
+ */
+function clientsFor(conversationId) {
   let set = conversationClients.get(conversationId);
   if (!set) {
     set = new Set();
@@ -35,7 +34,13 @@ function clientsFor(conversationId: string): Set<Client> {
   return set;
 }
 
-function broadcastToConversation(conversationId: string, message: unknown, exclude?: Client) {
+/**
+ * Broadcast a JSON message to all clients in a conversation.
+ * @param {string} conversationId
+ * @param {unknown} message
+ * @param {WebSocket} [exclude]
+ */
+function broadcastToConversation(conversationId, message, exclude) {
   const set = conversationClients.get(conversationId);
   if (!set) return;
   const payload = JSON.stringify(message);
@@ -59,9 +64,10 @@ export function createSocketServer(app) {
 
   const wss = new WebSocketServer({ server: httpServer, path: "/api/calls/ws" });
 
-  wss.on("connection", async (ws: Client, req) => {
+  wss.on("connection", async (ws, req) => {
     // Authenticate using the bearer token from the query string.
-    let userId: string | null = null;
+    /** @type {string|null} */
+    let userId = null;
     try {
       const url = new URL(req.url ?? "", `http://${req.headers.host}`);
       const token = url.searchParams.get("token") || "";
@@ -86,16 +92,20 @@ export function createSocketServer(app) {
       }
 
       userId = user.id;
+      /** @type {string|null} */
       ws.userId = userId;
+      /** @type {string|null} */
       ws.conversationId = null;
     } catch {
       ws.close(1008, "Authentication failed");
       return;
     }
 
-    const callTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    /** @type {Map<string, ReturnType<typeof setTimeout>>} */
+    const callTimers = new Map();
 
-    function clearCallTimer(callId: string) {
+    /** @param {string} callId */
+    function clearCallTimer(callId) {
       const timer = callTimers.get(callId);
       if (timer) {
         clearTimeout(timer);
@@ -103,13 +113,19 @@ export function createSocketServer(app) {
       }
     }
 
-    function setCallTimer(callId: string, ms: number, fn: () => void) {
+    /**
+     * @param {string} callId
+     * @param {number} ms
+     * @param {() => void} fn
+     */
+    function setCallTimer(callId, ms, fn) {
       clearCallTimer(callId);
       callTimers.set(callId, setTimeout(fn, ms));
     }
 
     ws.on("message", async (raw) => {
-      let data: any;
+      /** @type {any} */
+      let data;
       try {
         data = JSON.parse(raw.toString());
       } catch {
@@ -117,17 +133,19 @@ export function createSocketServer(app) {
         return;
       }
 
+      /** @type {string} */
       const { type } = data;
 
       switch (type) {
         case "join_conversation": {
+          /** @type {string} */
           const { conversationId } = data;
           if (!conversationId || typeof conversationId !== "string") break;
 
           // Leave any previous conversation.
           if (ws.conversationId) {
             const prevSet = conversationClients.get(ws.conversationId);
-            prevSet?.delete(ws);
+            prevSet && prevSet.delete(ws);
           }
 
           ws.conversationId = conversationId;
@@ -136,8 +154,9 @@ export function createSocketServer(app) {
         }
 
         case "call_start": {
+          /** @type {string} */
           const { conversationId, receiverId } = data;
-          const callerId = userId!;
+          const callerId = userId;
 
           if (!conversationId || !receiverId) {
             ws.send(JSON.stringify({ error: "Missing conversation or receiver" }));
@@ -217,8 +236,9 @@ export function createSocketServer(app) {
         }
 
         case "call_accept": {
+          /** @type {string} */
           const { callId } = data;
-          const receiverId = userId!;
+          const receiverId = userId;
 
           if (!callId) {
             ws.send(JSON.stringify({ error: "Missing call id" }));
@@ -266,8 +286,9 @@ export function createSocketServer(app) {
         }
 
         case "call_reject": {
+          /** @type {string} */
           const { callId } = data;
-          const receiverId = userId!;
+          const receiverId = userId;
 
           if (!callId) {
             ws.send(JSON.stringify({ error: "Missing call id" }));
@@ -315,8 +336,9 @@ export function createSocketServer(app) {
         }
 
         case "call_cancel": {
+          /** @type {string} */
           const { callId } = data;
-          const callerId = userId!;
+          const callerId = userId;
 
           if (!callId) {
             ws.send(JSON.stringify({ error: "Missing call id" }));
@@ -364,8 +386,9 @@ export function createSocketServer(app) {
         }
 
         case "call_end": {
+          /** @type {string} */
           const { callId } = data;
-          const actorId = userId!;
+          const actorId = userId;
 
           if (!callId) {
             ws.send(JSON.stringify({ error: "Missing call id" }));
@@ -413,8 +436,9 @@ export function createSocketServer(app) {
         }
 
         case "call_busy": {
+          /** @type {string} */
           const { callId } = data;
-          const receiverId = userId!;
+          const receiverId = userId;
 
           if (!callId) {
             ws.send(JSON.stringify({ error: "Missing call id" }));
@@ -458,8 +482,9 @@ export function createSocketServer(app) {
         }
 
         case "call_failed": {
+          /** @type {string} */
           const { callId } = data;
-          const actorId = userId!;
+          const actorId = userId;
 
           if (!callId) {
             ws.send(JSON.stringify({ error: "Missing call id" }));
@@ -515,7 +540,7 @@ export function createSocketServer(app) {
           userId,
         });
         const set = conversationClients.get(ws.conversationId);
-        set?.delete(ws);
+        set && set.delete(ws);
       }
       // Clear all call timers for this client's calls.
       for (const timer of callTimers.values()) {
